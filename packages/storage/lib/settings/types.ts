@@ -25,6 +25,7 @@ export enum ProviderTypeEnum {
 // Default supported models for each built-in provider
 export const llmProviderModelNames = {
   [ProviderTypeEnum.OpenAI]: [
+    'gpt-5.3-codex-spark',
     'gpt-5.1',
     'gpt-5',
     'gpt-5-pro',

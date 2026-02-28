@@ -4,6 +4,7 @@ import type { BaseStorage } from '../base/types';
 import { type AgentNameEnum, llmProviderModelNames, llmProviderParameters, ProviderTypeEnum } from './types';
 
 const AZURE_API_VERSION = '2025-04-01-preview';
+const OPENAI_CODEX_SPARK_MODEL = 'gpt-5.3-codex-spark';
 
 // Interface for a single provider configuration
 export interface ProviderConfig {
@@ -115,7 +116,11 @@ export function getDefaultProviderConfig(providerId: string): ProviderConfig {
     case ProviderTypeEnum.OpenRouter: // OpenRouter uses modelNames
     case ProviderTypeEnum.Groq: // Groq uses modelNames
     case ProviderTypeEnum.Cerebras: // Cerebras uses modelNames
-    case ProviderTypeEnum.Llama: // Llama uses modelNames
+    case ProviderTypeEnum.Llama: { // Llama uses modelNames
+      const defaultModels = [...(llmProviderModelNames[providerId] || [])];
+      if (providerId === ProviderTypeEnum.OpenAI && !defaultModels.includes(OPENAI_CODEX_SPARK_MODEL)) {
+        defaultModels.unshift(OPENAI_CODEX_SPARK_MODEL);
+      }
       return {
         apiKey: '',
         name: getDefaultDisplayNameFromProviderId(providerId),
@@ -126,9 +131,10 @@ export function getDefaultProviderConfig(providerId: string): ProviderConfig {
             : providerId === ProviderTypeEnum.Llama
               ? 'https://api.llama.com/v1'
               : undefined,
-        modelNames: [...(llmProviderModelNames[providerId] || [])],
+        modelNames: defaultModels,
         createdAt: Date.now(),
       };
+    }
 
     case ProviderTypeEnum.Ollama:
       return {
@@ -209,6 +215,11 @@ function ensureBackwardCompatibility(providerId: string, config: ProviderConfig)
     if (!updatedConfig.modelNames) {
       // console.log(`[ensureBackwardCompatibility] Adding default modelNames for non-Azure ${providerId}`);
       updatedConfig.modelNames = llmProviderModelNames[providerId as keyof typeof llmProviderModelNames] || [];
+    }
+
+    // Keep OpenAI Codex Spark in defaults for existing saved OpenAI configs.
+    if (providerId === ProviderTypeEnum.OpenAI && !updatedConfig.modelNames.includes(OPENAI_CODEX_SPARK_MODEL)) {
+      updatedConfig.modelNames = [OPENAI_CODEX_SPARK_MODEL, ...updatedConfig.modelNames];
     }
   }
 

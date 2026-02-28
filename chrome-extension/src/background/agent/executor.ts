@@ -1,5 +1,5 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput } from './types';
+import { type ActionResult, AgentContext, type AgentOptions, type AgentOutput, type InteractionMode } from './types';
 import { t } from '@extension/i18n';
 import { NavigatorAgent, NavigatorActionRegistry } from './agents/navigator';
 import { PlannerAgent, type PlannerOutput } from './agents/planner';
@@ -34,6 +34,7 @@ export interface ExecutorExtraArgs {
   extractorLLM?: BaseChatModel;
   agentOptions?: Partial<AgentOptions>;
   generalSettings?: GeneralSettingsConfig;
+  interactionMode?: InteractionMode;
 }
 
 export class Executor {
@@ -66,7 +67,7 @@ export class Executor {
 
     this.generalSettings = extraArgs?.generalSettings;
     this.tasks.push(task);
-    context.interactionMode = detectInteractionMode(task);
+    context.interactionMode = extraArgs?.interactionMode ?? detectInteractionMode(task);
     logger.info(`Interaction mode: ${context.interactionMode}`);
     this.navigatorPrompt = new NavigatorPrompt(context.options.maxActionsPerStep);
     this.plannerPrompt = new PlannerPrompt();
@@ -101,10 +102,15 @@ export class Executor {
     this.context.eventManager.clearSubscribers(EventType.EXECUTION);
   }
 
-  addFollowUpTask(task: string): void {
+  setInteractionMode(mode: InteractionMode): void {
+    this.context.interactionMode = mode;
+    logger.info(`Interaction mode set: ${this.context.interactionMode}`);
+  }
+
+  addFollowUpTask(task: string, interactionMode?: InteractionMode): void {
     this.tasks.push(task);
     this.context.messageManager.addNewTask(task);
-    this.context.interactionMode = detectInteractionMode(task);
+    this.context.interactionMode = interactionMode ?? detectInteractionMode(task);
     logger.info(`Interaction mode updated: ${this.context.interactionMode}`);
 
     // need to reset previous action results that are not included in memory
@@ -123,6 +129,14 @@ export class Executor {
    */
   private checkTaskCompletion(planOutput: AgentOutput<PlannerOutput> | null): boolean {
     if (planOutput?.result?.done) {
+      // If the planner says this is a web task, the navigator must have run at least once
+      // before we allow completion. This prevents the planner from short-circuiting
+      // web tasks by answering with instructions instead of letting the navigator act.
+      if (planOutput.result.web_task && this.context.nSteps === 0) {
+        logger.info('⏳ Planner marked done but web_task=true and navigator has not run yet, continuing...');
+        return false;
+      }
+
       logger.info('✅ Planner confirms task completion');
       if (planOutput.result.final_answer) {
         this.context.finalAnswer = planOutput.result.final_answer;

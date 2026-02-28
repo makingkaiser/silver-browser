@@ -8,6 +8,7 @@ import favoritesStorage, { type FavoritePrompt } from '@extension/storage/lib/pr
 import { t } from '@extension/i18n';
 import MessageList from './components/MessageList';
 import ChatInput from './components/ChatInput';
+import ModeToggle, { type InteractionMode } from './components/ModeToggle';
 import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
 import { EventType, type AgentEvent, ExecutionState } from './types/event';
@@ -37,6 +38,7 @@ const SidePanel = () => {
   const [replayEnabled, setReplayEnabled] = useState(false);
   const [isTaskRunning, setIsTaskRunning] = useState(false);
   const [isGuideWaiting, setIsGuideWaiting] = useState(false);
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('default');
   const sessionIdRef = useRef<string | null>(null);
   const isReplayingRef = useRef<boolean>(false);
   const portRef = useRef<chrome.runtime.Port | null>(null);
@@ -387,6 +389,32 @@ const SidePanel = () => {
     [stopConnection],
   );
 
+  const handleInteractionModeChange = useCallback(
+    (mode: InteractionMode) => {
+      setInteractionMode(mode);
+
+      if (!isTaskRunning) {
+        return;
+      }
+
+      try {
+        if (!portRef.current) {
+          setupConnection();
+        }
+
+        sendMessage({
+          type: 'set_interaction_mode',
+          mode,
+          taskId: sessionIdRef.current,
+        });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('set_interaction_mode error', errorMessage);
+      }
+    },
+    [isTaskRunning, sendMessage, setupConnection],
+  );
+
   const handleReplay = async (historySessionId: string): Promise<void> => {
     try {
       if (!replayEnabled) {
@@ -602,6 +630,7 @@ const SidePanel = () => {
           task: text,
           taskId: sessionIdRef.current,
           tabId,
+          interactionMode,
         });
         console.log('follow_up_task sent', text, tabId, sessionIdRef.current);
       } else {
@@ -610,6 +639,7 @@ const SidePanel = () => {
           task: text,
           taskId: sessionIdRef.current,
           tabId,
+          interactionMode,
         });
         console.log('new_task sent', text, tabId, sessionIdRef.current);
       }
@@ -1073,6 +1103,7 @@ const SidePanel = () => {
               {messages.length === 0 && (
                 <>
                   <div className="mb-2 border-t border-zinc-200 p-2 dark:border-zinc-800">
+                    <ModeToggle value={interactionMode} onChange={handleInteractionModeChange} />
                     <ChatInput {...chatInputProps} />
                   </div>
                   <div className="flex-1 overflow-y-auto">
@@ -1094,6 +1125,7 @@ const SidePanel = () => {
               )}
               {messages.length > 0 && (
                 <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
+                  <ModeToggle value={interactionMode} onChange={handleInteractionModeChange} />
                   <ChatInput {...chatInputProps} />
                 </div>
               )}

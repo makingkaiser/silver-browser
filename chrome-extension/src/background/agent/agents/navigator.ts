@@ -28,6 +28,7 @@ import { convertZodToJsonSchema, repairJsonString } from '@src/background/utils'
 import { HistoryTreeProcessor } from '@src/background/browser/dom/history/service';
 import { AgentStepRecord } from '../history';
 import { type DOMHistoryElement } from '@src/background/browser/dom/history/view';
+import { t } from '@extension/i18n';
 
 const logger = createLogger('NavigatorAgent');
 
@@ -215,7 +216,7 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.STEP_OK, 'Navigation done');
       let done = false;
       if (actionResults.length > 0 && actionResults[actionResults.length - 1].isDone) {
-        done = true;
+        done = actionResults[actionResults.length - 1].success;
       }
       agentOutput.result = { done };
       return agentOutput;
@@ -381,15 +382,33 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
     for (const [i, action] of actions.entries()) {
       let actionName = Object.keys(action)[0];
-      const actionArgs = action[actionName];
+      let actionArgs = action[actionName];
       try {
         // check if the task is paused or stopped
         if (this.context.paused || this.context.stopped) {
           return results;
         }
 
-        if (this.context.interactionMode === 'guided' && actionName === 'click_element') {
-          actionName = 'guide_user_click';
+        if (this.context.interactionMode === 'guided') {
+          if (actionName === 'click_element') {
+            actionName = 'guide_user_click';
+          } else if (actionName === 'select_dropdown_option') {
+            const selectArgs = actionArgs as {
+              index?: number;
+              text?: string;
+              intent?: string;
+            };
+            const optionText = typeof selectArgs.text === 'string' ? selectArgs.text.trim() : '';
+            actionName = 'guide_user_click';
+            actionArgs = {
+              index: selectArgs.index,
+              intent: selectArgs.intent || '',
+              instruction: t('act_guideUserClick_instruction', [
+                String(selectArgs.index ?? ''),
+                optionText || t('act_guideUserClick_target'),
+              ]),
+            };
+          }
         }
 
         const actionInstance = this.actionRegistry.getAction(actionName);

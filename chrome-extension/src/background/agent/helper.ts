@@ -64,8 +64,20 @@ class ChatLlama extends ChatOpenAI {
   }
 }
 
+// Codex Spark is a distilled speed model, not a reasoning model
+function isCodexSparkModel(modelName: string): boolean {
+  let modelNameWithoutProvider = modelName;
+  if (modelName.startsWith('openai/')) {
+    modelNameWithoutProvider = modelName.substring(7);
+  }
+  return modelNameWithoutProvider.includes('codex-spark');
+}
+
 // O series models or GPT-5 models that support reasoning
 function isOpenAIReasoningModel(modelName: string): boolean {
+  if (isCodexSparkModel(modelName)) {
+    return false;
+  }
   let modelNameWithoutProvider = modelName;
   if (modelName.startsWith('openai/')) {
     modelNameWithoutProvider = modelName.substring(7);

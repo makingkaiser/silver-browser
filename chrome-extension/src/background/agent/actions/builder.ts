@@ -158,6 +158,7 @@ export class ActionBuilder {
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, input.text);
       return new ActionResult({
         isDone: true,
+        success: input.success,
         extractedContent: input.text,
       });
     }, doneActionSchema);
@@ -227,9 +228,8 @@ export class ActionBuilder {
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
-        const state = await page.getState();
-
-        const elementNode = state?.selectorMap.get(input.index);
+        const focusedState = await page.focusHighlight(input.index, this.context.options.useVision);
+        const elementNode = focusedState?.selectorMap.get(input.index);
         if (!elementNode) {
           throw new Error(t('act_errors_elementNotExist', [input.index.toString()]));
         }
@@ -270,6 +270,8 @@ export class ActionBuilder {
           return new ActionResult({
             error: error instanceof Error ? error.message : String(error),
           });
+        } finally {
+          await page.removeHighlight().catch(() => undefined);
         }
       },
       clickElementActionSchema,

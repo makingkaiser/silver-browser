@@ -14,6 +14,8 @@ import type { Frame } from 'puppeteer-core/lib/esm/puppeteer/api/Frame.js';
 import {
   getClickableElements as _getClickableElements,
   removeHighlights as _removeHighlights,
+  showHighlightContainer as _showHighlightContainer,
+  hideHighlightContainer as _hideHighlightContainer,
   getScrollInfo as _getScrollInfo,
 } from './dom/service';
 import { DOMElementNode, type DOMState } from './dom/views';
@@ -178,8 +180,20 @@ export default class Page {
   }
 
   async removeHighlight(): Promise<void> {
-    if (this._config.displayHighlights && this._validWebPage) {
+    if (this._validWebPage) {
       await _removeHighlights(this._tabId);
+    }
+  }
+
+  async showHighlightContainer(): Promise<void> {
+    if (this._validWebPage) {
+      await _showHighlightContainer(this._tabId);
+    }
+  }
+
+  async hideHighlightContainer(): Promise<void> {
+    if (this._validWebPage) {
+      await _hideHighlightContainer(this._tabId);
     }
   }
 
@@ -408,30 +422,26 @@ export default class Page {
     try {
       await this.removeHighlight();
 
-      // Get DOM content (equivalent to dom_service.get_clickable_elements)
-      // This part would need to be implemented based on your DomService logic
-      // showHighlightElements is true if either useVision or displayHighlights is true
-      const displayHighlights = this._config.displayHighlights || useVision;
-      const content = await this.getClickableElements(displayHighlights, focusElement);
+      const content = await this.getClickableElements(this._config.displayHighlights, focusElement);
       if (!content) {
         logger.warning('Failed to get clickable elements');
-        // Return last known good state if available
         return this._state;
       }
-      // log the attributes of content object
-      if ('selectorMap' in content) {
-        logger.debug('content.selectorMap:', content.selectorMap.size);
-      } else {
-        logger.debug('content.selectorMap: not found');
-      }
-      if ('elementTree' in content) {
-        logger.debug('content.elementTree:', content.elementTree?.tagName);
-      } else {
-        logger.debug('content.elementTree: not found');
-      }
 
-      // Take screenshot if needed
-      const screenshot = useVision ? await this.takeScreenshot() : null;
+      logger.debug('content.selectorMap:', content.selectorMap.size);
+      logger.debug('content.elementTree:', content.elementTree?.tagName);
+
+      let screenshot: string | null = null;
+      if (useVision) {
+        const shouldFlashHide = !this._config.displayHighlights && focusElement < 0;
+        if (shouldFlashHide) {
+          await this.showHighlightContainer();
+        }
+        screenshot = await this.takeScreenshot();
+        if (shouldFlashHide) {
+          await this.hideHighlightContainer();
+        }
+      }
       const [scrollY, visualViewportHeight, scrollHeight] = await this.getScrollInfo();
 
       // update the state

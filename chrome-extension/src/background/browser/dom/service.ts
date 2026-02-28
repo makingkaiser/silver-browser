@@ -512,13 +512,11 @@ export async function removeHighlights(tabId: number): Promise<void> {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       func: () => {
-        // Remove the highlight container and all its contents
         const container = document.getElementById('playwright-highlight-container');
         if (container) {
           container.remove();
         }
 
-        // Remove highlight attributes from elements
         const highlightedElements = document.querySelectorAll('[browser-user-highlight-id^="playwright-highlight-"]');
         for (const el of Array.from(highlightedElements)) {
           el.removeAttribute('browser-user-highlight-id');
@@ -527,6 +525,38 @@ export async function removeHighlights(tabId: number): Promise<void> {
     });
   } catch (error) {
     logger.error('Failed to remove highlights:', error);
+  }
+}
+
+export async function showHighlightContainer(tabId: number): Promise<void> {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      func: () => {
+        const container = document.getElementById('playwright-highlight-container');
+        if (container) {
+          container.style.display = 'block';
+        }
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to show highlight container:', error);
+  }
+}
+
+export async function hideHighlightContainer(tabId: number): Promise<void> {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      func: () => {
+        const container = document.getElementById('playwright-highlight-container');
+        if (container) {
+          container.style.display = 'none';
+        }
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to hide highlight container:', error);
   }
 }
 

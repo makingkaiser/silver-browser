@@ -64,6 +64,18 @@
   "chat_buttons_send": {
     "message": "Send"
   },
+  "chat_modeToggle_act": {
+    "message": "Act"
+  },
+  "chat_modeToggle_guide": {
+    "message": "Guide"
+  },
+  "chat_modeToggle_act_desc": {
+    "message": "Agent clicks for you"
+  },
+  "chat_modeToggle_guide_desc": {
+    "message": "Agent highlights, you click"
+  },
   "chat_input_placeholder": {
     "message": "What can I help you with?"
   },

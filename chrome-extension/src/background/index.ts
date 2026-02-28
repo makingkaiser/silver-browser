@@ -15,6 +15,7 @@ import { ExecutionState } from './agent/event/types';
 import { createChatModel } from './agent/helper';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { DEFAULT_AGENT_OPTIONS } from './agent/types';
+import type { InteractionMode } from './agent/types';
 import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
@@ -25,6 +26,7 @@ const browserContext = new BrowserContext({});
 let currentExecutor: Executor | null = null;
 let currentPort: chrome.runtime.Port | null = null;
 const SIDE_PANEL_URL = chrome.runtime.getURL('side-panel/index.html');
+const isInteractionMode = (value: unknown): value is InteractionMode => value === 'default' || value === 'guided';
 
 // Setup side panel behavior
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(error => console.error(error));
@@ -100,7 +102,8 @@ chrome.runtime.onConnect.addListener(port => {
             if (!message.tabId) return port.postMessage({ type: 'error', error: t('bg_errors_noTabId') });
 
             logger.info('new_task', message.tabId, message.task);
-            currentExecutor = await setupExecutor(message.taskId, message.task, browserContext);
+            const interactionMode = isInteractionMode(message.interactionMode) ? message.interactionMode : undefined;
+            currentExecutor = await setupExecutor(message.taskId, message.task, browserContext, interactionMode);
             subscribeToExecutorEvents(currentExecutor);
 
             const result = await currentExecutor.execute();
@@ -116,7 +119,8 @@ chrome.runtime.onConnect.addListener(port => {
 
             // If executor exists, add follow-up task
             if (currentExecutor) {
-              currentExecutor.addFollowUpTask(message.task);
+              const interactionMode = isInteractionMode(message.interactionMode) ? message.interactionMode : undefined;
+              currentExecutor.addFollowUpTask(message.task, interactionMode);
               // Re-subscribe to events in case the previous subscription was cleaned up
               subscribeToExecutorEvents(currentExecutor);
               const result = await currentExecutor.execute();
@@ -127,6 +131,20 @@ chrome.runtime.onConnect.addListener(port => {
               return port.postMessage({ type: 'error', error: t('bg_cmd_followUpTask_cleaned') });
             }
             break;
+          }
+
+          case 'set_interaction_mode': {
+            if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+            if (!isInteractionMode(message.mode))
+              return port.postMessage({ type: 'error', error: t('errors_unknown') });
+            if (message.taskId) {
+              const runningTaskId = await currentExecutor.getCurrentTaskId();
+              if (runningTaskId !== message.taskId) {
+                return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+              }
+            }
+            currentExecutor.setInteractionMode(message.mode);
+            return port.postMessage({ type: 'success' });
           }
 
           case 'guide_user_note': {
@@ -278,7 +296,12 @@ chrome.runtime.onConnect.addListener(port => {
   }
 });
 
-async function setupExecutor(taskId: string, task: string, browserContext: BrowserContext) {
+async function setupExecutor(
+  taskId: string,
+  task: string,
+  browserContext: BrowserContext,
+  interactionMode?: InteractionMode,
+) {
   const providers = await llmProviderStore.getAllProviders();
   // if no providers, need to display the options page
   if (Object.keys(providers).length === 0) {
@@ -342,6 +365,7 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
       useVisionForPlanner: true,
       planningInterval: generalSettings.planningInterval,
     },
+    interactionMode,
     generalSettings: generalSettings,
   });
 

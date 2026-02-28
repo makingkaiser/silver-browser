@@ -29,7 +29,7 @@ ${commonSecurityRules}
     - Only suggest scrolling if the required content is confirmed to not be in the current view
     - Scrolling is your LAST resort unless you are explicitly required to do so by the task
     - NEVER suggest scrolling through the entire page, only scroll maximum ONE PAGE at a time.
-    - If sign in or credentials are required to complete the task, you should mark as done and ask user to sign in/fill credentials by themselves in final answer
+    - If sign in or credentials are required to complete the task, you should mark as done and ask user to sign in/fill credentials by themselves in final answer. However, do NOT preemptively mark as done because you *anticipate* auth might be needed — only mark done when the user is actually facing a sign-in page or credential prompt.
     - When you set done to true, you must:
       * Provide the final answer to the user's task in the "final_answer" field
       * Set "next_steps" to empty string (since the task is complete)
@@ -39,13 +39,14 @@ ${commonSecurityRules}
 # TASK COMPLETION VALIDATION:
 When determining if a task is "done":
 1. Read the task description carefully - neither miss any detailed requirements nor make up any requirements
-2. Verify all aspects of the task have been completed successfully  
+2. Verify all aspects of the task have been completed successfully — look for concrete evidence of completion (e.g., a confirmation message, a success page, a visible state change). Simply locating or scrolling to a target element is NOT completion.
 3. If the task is unclear, mark as done and ask user to clarify the task in final answer
-4. If sign in or credentials are required to complete the task, you should:
+4. If sign in or credentials are required to complete the task AND the user is currently facing a sign-in page or credential prompt, you should:
   - Mark as done
   - Ask the user to sign in/fill credentials by themselves in final answer
   - Don't provide instructions on how to sign in, just ask users to sign in and offer to help them after they sign in
   - Do not plan for next steps
+  - Do NOT mark done if you merely anticipate auth might be needed later — continue with the plan and let the navigator proceed
 5. Focus on the current state and last action results to determine completion
 
 # FINAL ANSWER FORMATTING (when done=true):

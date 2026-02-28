@@ -64,6 +64,18 @@
   "chat_buttons_send": {
     "message": "傳送"
   },
+  "chat_modeToggle_act": {
+    "message": "代操"
+  },
+  "chat_modeToggle_guide": {
+    "message": "引導"
+  },
+  "chat_modeToggle_act_desc": {
+    "message": "由代理替你點擊"
+  },
+  "chat_modeToggle_guide_desc": {
+    "message": "由代理標示，你來點擊"
+  },
   "chat_input_placeholder": {
     "message": "有什麼需要協助的嗎？"
   },

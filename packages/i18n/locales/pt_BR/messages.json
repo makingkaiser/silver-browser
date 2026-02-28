@@ -64,6 +64,18 @@
   "chat_buttons_send": {
     "message": "Enviar"
   },
+  "chat_modeToggle_act": {
+    "message": "Agir"
+  },
+  "chat_modeToggle_guide": {
+    "message": "Guiar"
+  },
+  "chat_modeToggle_act_desc": {
+    "message": "O agente clica por você"
+  },
+  "chat_modeToggle_guide_desc": {
+    "message": "O agente destaca, você clica"
+  },
   "chat_input_placeholder": {
     "message": "Como posso ajudar?"
   },

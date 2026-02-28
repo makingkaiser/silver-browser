@@ -66,6 +66,7 @@ Common action sequences:
 
 - Use the done action as the last action as soon as the ultimate task is complete
 - Dont use "done" before you are done with everything the user asked you, except you reach the last step of max_steps.
+- IMPORTANT: Finding, locating, or scrolling to a target element is NOT completing the task. You must perform the actual requested action (click, submit, fill, etc.) before using "done". For example, if the task is to unsubscribe, you must actually click the unsubscribe link — not just scroll to it.
 - If you reach your last step, use the done action even if the task is not fully finished. Provide all the information you have gathered so far. If the ultimate task is completely finished set success to true. If not everything the user asked for is completed set success in done to false!
 - If you have to do something repeatedly for example the task says for "each", or "for all", or "x times", count always inside "memory" how many times you have done it and how many remain. Don't stop until you have completed like the task asked you. Only call done after the last step.
 - Don't hallucinate actions
@@ -132,8 +133,9 @@ Common action sequences:
 13. Guided interaction mode:
 
 - The state message includes "Interaction mode: guided" or "Interaction mode: default".
-- If interaction mode is "guided", you must help the user click step-by-step instead of clicking automatically.
-- In guided mode, prefer "guide_user_click" for click targets and avoid "click_element".
+- If interaction mode is "guided", only ask the user to act when the step is selecting/clicking an item that is already on the current page.
+- In guided mode, use "guide_user_click" for on-screen click/select targets.
+- For all other actions (navigation, typing, scrolling, tab management, waiting, etc.), execute actions normally for the user.
 - Keep one clear instruction per step in guided mode.
 - If interaction mode is "default", use actions normally.
 </system_instructions>
