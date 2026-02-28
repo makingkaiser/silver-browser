@@ -14,7 +14,7 @@ SilverBrowser is a Chrome extension forked from [Nanobrowser](https://github.com
 - **Adjustable font size** — Six size levels, changeable from the toolbar with + / − buttons.
 - **Voice input** — Speak your request instead of typing. Uses a Gemini speech-to-text model.
 - **Favorite prompts** — Save common tasks (e.g. "Check my Gmail") as bookmarks for one-tap replay.
-- **Multi-language UI** — English and Chinese, switchable from the toolbar.
+- **Multi-language UI** — English and Chinese(With Support for Malay and Tamil Coming), switchable from the toolbar.
 
 ## Quick start
 
