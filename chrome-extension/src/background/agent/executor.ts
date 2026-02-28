@@ -134,9 +134,22 @@ export class Executor {
    */
   private checkTaskCompletion(planOutput: AgentOutput<PlannerOutput> | null): boolean {
     if (planOutput?.result?.done) {
-      // If the planner says this is a web task, the navigator must have run at least once
-      // before we allow completion. This prevents the planner from short-circuiting
-      // web tasks by answering with instructions instead of letting the navigator act.
+      // In guided mode the planner must never short-circuit by answering with
+      // instructions. Force the navigator to run at least once regardless of
+      // web_task so the agent actually performs the task instead of explaining it.
+      if (this.context.interactionMode === 'guided' && this.context.nSteps === 0) {
+        logger.info('⏳ Guided mode: planner marked done before navigator ran, overriding to continue...');
+        if (planOutput.result) {
+          planOutput.result.done = false;
+          planOutput.result.web_task = true;
+          if (!planOutput.result.next_steps) {
+            planOutput.result.next_steps = planOutput.result.final_answer || '';
+          }
+          planOutput.result.final_answer = '';
+        }
+        return false;
+      }
+
       if (planOutput.result.web_task && this.context.nSteps === 0) {
         logger.info('⏳ Planner marked done but web_task=true and navigator has not run yet, continuing...');
         return false;
