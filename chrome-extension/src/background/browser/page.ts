@@ -97,6 +97,10 @@ export default class Page {
     return this._validWebPage;
   }
 
+  updateConfig(config: Partial<BrowserContextConfig>): void {
+    this._config = { ...this._config, ...config };
+  }
+
   get attached(): boolean {
     return this._validWebPage && this._puppeteerPage !== null;
   }
@@ -422,7 +426,8 @@ export default class Page {
     try {
       await this.removeHighlight();
 
-      const content = await this.getClickableElements(this._config.displayHighlights, focusElement);
+      const shouldRenderHighlights = this._config.displayHighlights || focusElement >= 0;
+      const content = await this.getClickableElements(shouldRenderHighlights, focusElement);
       if (!content) {
         logger.warning('Failed to get clickable elements');
         return this._state;
@@ -433,7 +438,8 @@ export default class Page {
 
       let screenshot: string | null = null;
       if (useVision) {
-        const shouldFlashHide = !this._config.displayHighlights && focusElement < 0;
+        const shouldFlashHide =
+          this._config.flashHighlightsForVision && !this._config.displayHighlights && focusElement < 0;
         if (shouldFlashHide) {
           await this.showHighlightContainer();
         }

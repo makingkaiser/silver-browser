@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState, useRef, useEffect } from 'react';
 import { FaTrash, FaPen, FaCheck, FaTimes } from 'react-icons/fa';
-import { t } from '@extension/i18n';
+import { useSidePanel } from '../context/SidePanelContext';
 
 interface Bookmark {
   id: number;
@@ -37,6 +37,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
   onBookmarkDelete,
   onBookmarkReorder,
 }) => {
+  const { ut, ts } = useSidePanel();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
   const [draggedId, setDraggedId] = useState<number | null>(null);
@@ -90,8 +91,8 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
 
   return (
     <div className="p-2">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-        {t('chat_bookmarks_header')}
+      <h3 className={`mb-3 font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 ${ts('label')}`}>
+        {ut('bookmarks_header')}
       </h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {bookmarks.map(bookmark => (
@@ -115,14 +116,14 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                 <button
                   onClick={() => handleSaveEdit(bookmark.id)}
                   className="rounded-lg p-1 text-emerald-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  aria-label={t('chat_bookmarks_saveEdit')}
+                  aria-label={ut('bookmarks_saveEdit')}
                   type="button">
                   <FaCheck size={14} />
                 </button>
                 <button
                   onClick={handleCancelEdit}
                   className="ml-1 rounded-lg p-1 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  aria-label={t('chat_bookmarks_cancelEdit')}
+                  aria-label={ut('bookmarks_cancelEdit')}
                   type="button">
                   <FaTimes size={14} />
                 </button>
@@ -139,7 +140,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                     }
                   }}
                   className="w-full text-left">
-                  <div className="truncate pr-10 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  <div className={`truncate pr-10 font-medium text-zinc-700 dark:text-zinc-200 ${ts('body')}`}>
                     {bookmark.title}
                   </div>
                 </button>
@@ -154,7 +155,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                     handleEditClick(bookmark);
                   }}
                   className="absolute right-[28px] top-1/2 z-10 -translate-y-1/2 rounded-lg p-1 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-emerald-500 group-hover:opacity-100 dark:hover:bg-zinc-800"
-                  aria-label={t('chat_bookmarks_edit')}
+                  aria-label={ut('bookmarks_edit')}
                   type="button">
                   <FaPen size={14} />
                 </button>
@@ -167,7 +168,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                     }
                   }}
                   className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-lg p-1 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-zinc-800"
-                  aria-label={t('chat_bookmarks_delete')}
+                  aria-label={ut('bookmarks_delete')}
                   type="button">
                   <FaTrash size={14} />
                 </button>

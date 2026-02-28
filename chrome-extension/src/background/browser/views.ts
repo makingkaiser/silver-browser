@@ -76,6 +76,13 @@ export interface BrowserContextConfig {
    * @default true
    */
   displayHighlights: boolean;
+
+  /**
+   * Temporarily show hidden highlights while taking screenshots for vision.
+   * Disable this in guided mode to avoid flashing all overlays.
+   * @default true
+   */
+  flashHighlightsForVision: boolean;
 }
 
 export const DEFAULT_BROWSER_CONTEXT_CONFIG: BrowserContextConfig = {
@@ -90,6 +97,7 @@ export const DEFAULT_BROWSER_CONTEXT_CONFIG: BrowserContextConfig = {
   includeDynamicAttributes: true,
   homePageUrl: 'about:blank',
   displayHighlights: true,
+  flashHighlightsForVision: true,
 };
 
 export interface PageState extends DOMState {

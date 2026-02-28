@@ -69,8 +69,10 @@ export class Executor {
     this.tasks.push(task);
     context.interactionMode = extraArgs?.interactionMode ?? detectInteractionMode(task);
     logger.info(`Interaction mode: ${context.interactionMode}`);
-    this.navigatorPrompt = new NavigatorPrompt(context.options.maxActionsPerStep);
-    this.plannerPrompt = new PlannerPrompt();
+    const uiLanguage = extraArgs?.generalSettings?.uiLanguage ?? 'en';
+    context.uiLanguage = uiLanguage;
+    this.navigatorPrompt = new NavigatorPrompt(context.options.maxActionsPerStep, uiLanguage);
+    this.plannerPrompt = new PlannerPrompt(uiLanguage);
 
     const actionBuilder = new ActionBuilder(context, extractorLLM);
     const navigatorActionRegistry = new NavigatorActionRegistry(actionBuilder.buildDefaultActions());
@@ -104,13 +106,16 @@ export class Executor {
 
   setInteractionMode(mode: InteractionMode): void {
     this.context.interactionMode = mode;
+    this.context.browserContext.updateConfig({ flashHighlightsForVision: mode !== 'guided' });
     logger.info(`Interaction mode set: ${this.context.interactionMode}`);
   }
 
   addFollowUpTask(task: string, interactionMode?: InteractionMode): void {
     this.tasks.push(task);
     this.context.messageManager.addNewTask(task);
-    this.context.interactionMode = interactionMode ?? detectInteractionMode(task);
+    const nextMode = interactionMode ?? detectInteractionMode(task);
+    this.context.interactionMode = nextMode;
+    this.context.browserContext.updateConfig({ flashHighlightsForVision: nextMode !== 'guided' });
     logger.info(`Interaction mode updated: ${this.context.interactionMode}`);
 
     // need to reset previous action results that are not included in memory

@@ -14,7 +14,8 @@ export interface GeneralSettingsConfig {
   minWaitPageLoad: number;
   replayHistoricalTasks: boolean;
   collapsePlannerMessages: boolean;
-  messageFontSize: number; // 0 = small, 1 = default, 2 = large
+  messageFontSize: number; // 0–5; default 3 (large)
+  uiLanguage: string; // 'en' | 'zh' | 'ms' | 'ta'
 }
 
 export type GeneralSettingsStorage = BaseStorage<GeneralSettingsConfig> & {
@@ -35,7 +36,8 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettingsConfig = {
   minWaitPageLoad: 250,
   replayHistoricalTasks: false,
   collapsePlannerMessages: true,
-  messageFontSize: 1,
+  messageFontSize: 3,
+  uiLanguage: 'en',
 };
 
 const storage = createStorage<GeneralSettingsConfig>('general-settings', DEFAULT_GENERAL_SETTINGS, {

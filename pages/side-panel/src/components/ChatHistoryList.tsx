@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { FaTrash } from 'react-icons/fa';
 import { BsBookmark } from 'react-icons/bs';
-import { t } from '@extension/i18n';
+import { useSidePanel } from '../context/SidePanelContext';
 
 interface ChatSession {
   id: string;
@@ -24,6 +24,8 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
   onSessionBookmark,
   visible,
 }) => {
+  const { ut, ts } = useSidePanel();
+
   if (!visible) return null;
 
   const formatDate = (timestamp: number) => {
@@ -33,10 +35,11 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <h2 className="mb-4 text-lg font-semibold text-zinc-800 dark:text-zinc-200">{t('chat_history_title')}</h2>
+      <h2 className={`mb-4 font-semibold text-zinc-800 dark:text-zinc-200 ${ts('heading')}`}>{ut('history_title')}</h2>
       {sessions.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 p-4 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-          {t('chat_history_empty')}
+        <div
+          className={`rounded-xl border border-zinc-200 p-4 text-center text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 ${ts('body')}`}>
+          {ut('history_empty')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -45,8 +48,10 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
               key={session.id}
               className="group relative rounded-xl border border-zinc-200 p-3 transition-all hover:ring-1 hover:ring-emerald-500/30 dark:border-zinc-800">
               <button onClick={() => onSessionSelect(session.id)} className="w-full text-left" type="button">
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{session.title}</h3>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{formatDate(session.createdAt)}</p>
+                <h3 className={`font-medium text-zinc-900 dark:text-zinc-100 ${ts('body')}`}>{session.title}</h3>
+                <p className={`mt-1 text-zinc-500 dark:text-zinc-400 ${ts('label')}`}>
+                  {formatDate(session.createdAt)}
+                </p>
               </button>
 
               {onSessionBookmark && (
@@ -56,7 +61,7 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
                     onSessionBookmark(session.id);
                   }}
                   className="absolute right-2 top-2 rounded-lg p-1 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-emerald-500 group-hover:opacity-100 dark:hover:bg-zinc-800"
-                  aria-label={t('chat_history_bookmark')}
+                  aria-label={ut('history_bookmark')}
                   type="button">
                   <BsBookmark size={14} />
                 </button>
@@ -68,7 +73,7 @@ const ChatHistoryList: React.FC<ChatHistoryListProps> = ({
                   onSessionDelete(session.id);
                 }}
                 className="absolute bottom-2 right-2 rounded-lg p-1 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-zinc-800"
-                aria-label={t('chat_history_delete')}
+                aria-label={ut('history_delete')}
                 type="button">
                 <FaTrash size={14} />
               </button>

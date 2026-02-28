@@ -1,5 +1,6 @@
 import { ActionResult, type AgentContext } from '@src/background/agent/types';
 import { t } from '@extension/i18n';
+import { getActionMessages } from './actionMessages';
 import {
   clickElementActionSchema,
   guideUserClickActionSchema,
@@ -152,9 +153,10 @@ export class ActionBuilder {
 
   buildDefaultActions() {
     const actions = [];
+    const msg = getActionMessages(this.context.uiLanguage);
 
     const done = new Action(async (input: z.infer<typeof doneActionSchema.schema>) => {
-      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, doneActionSchema.name);
+      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, msg.done_name);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, input.text);
       return new ActionResult({
         isDone: true,
@@ -166,29 +168,29 @@ export class ActionBuilder {
 
     const searchGoogle = new Action(async (input: z.infer<typeof searchGoogleActionSchema.schema>) => {
       const context = this.context;
-      const intent = input.intent || t('act_searchGoogle_start', [input.query]);
+      const intent = input.intent || msg.searchGoogle_start(input.query);
       context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
       await context.browserContext.navigateTo(`https://www.google.com/search?q=${input.query}`);
 
-      const msg2 = t('act_searchGoogle_ok', [input.query]);
-      context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg2);
+      const okMsg = msg.searchGoogle_ok(input.query);
+      context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, okMsg);
       return new ActionResult({
-        extractedContent: msg2,
+        extractedContent: okMsg,
         includeInMemory: true,
       });
     }, searchGoogleActionSchema);
     actions.push(searchGoogle);
 
     const goToUrl = new Action(async (input: z.infer<typeof goToUrlActionSchema.schema>) => {
-      const intent = input.intent || t('act_goToUrl_start', [input.url]);
+      const intent = input.intent || msg.goToUrl_start(input.url);
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
       await this.context.browserContext.navigateTo(input.url);
-      const msg2 = t('act_goToUrl_ok', [input.url]);
-      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg2);
+      const okMsg = msg.goToUrl_ok(input.url);
+      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, okMsg);
       return new ActionResult({
-        extractedContent: msg2,
+        extractedContent: okMsg,
         includeInMemory: true,
       });
     }, goToUrlActionSchema);
@@ -196,15 +198,15 @@ export class ActionBuilder {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const goBack = new Action(async (input: z.infer<typeof goBackActionSchema.schema>) => {
-      const intent = input.intent || t('act_goBack_start');
+      const intent = input.intent || msg.goBack_start;
       this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
       const page = await this.context.browserContext.getCurrentPage();
       await page.goBack();
-      const msg2 = t('act_goBack_ok');
-      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg2);
+      const okMsg = msg.goBack_ok;
+      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, okMsg);
       return new ActionResult({
-        extractedContent: msg2,
+        extractedContent: okMsg,
         includeInMemory: true,
       });
     }, goBackActionSchema);
@@ -224,7 +226,7 @@ export class ActionBuilder {
     // Element Interaction Actions
     const clickElement = new Action(
       async (input: z.infer<typeof clickElementActionSchema.schema>) => {
-        const intent = input.intent || t('act_click_start', [input.index.toString()]);
+        const intent = input.intent || msg.click_start(input.index.toString());
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
@@ -234,12 +236,11 @@ export class ActionBuilder {
           throw new Error(t('act_errors_elementNotExist', [input.index.toString()]));
         }
 
-        // Check if element is a file uploader
         if (page.isFileUploader(elementNode)) {
-          const msg = t('act_click_fileUploader', [input.index.toString()]);
-          logger.info(msg);
+          const fileMsg = t('act_click_fileUploader', [input.index.toString()]);
+          logger.info(fileMsg);
           return new ActionResult({
-            extractedContent: msg,
+            extractedContent: fileMsg,
             includeInMemory: true,
           });
         }
@@ -247,26 +248,24 @@ export class ActionBuilder {
         try {
           const initialTabIds = await this.context.browserContext.getAllTabIds();
           await page.clickElementNode(this.context.options.useVision, elementNode);
-          let msg = t('act_click_ok', [input.index.toString(), elementNode.getAllTextTillNextClickableElement(2)]);
-          logger.info(msg);
+          let clickMsg = msg.click_ok(input.index.toString(), elementNode.getAllTextTillNextClickableElement(2));
+          logger.info(clickMsg);
 
-          // TODO: could be optimized by chrome extension tab api
           const currentTabIds = await this.context.browserContext.getAllTabIds();
           if (currentTabIds.size > initialTabIds.size) {
             const newTabMsg = t('act_click_newTabOpened');
-            msg += ` - ${newTabMsg}`;
+            clickMsg += ` - ${newTabMsg}`;
             logger.info(newTabMsg);
-            // find the tab id that is not in the initial tab ids
             const newTabId = Array.from(currentTabIds).find(id => !initialTabIds.has(id));
             if (newTabId) {
               await this.context.browserContext.switchTab(newTabId);
             }
           }
-          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
-          return new ActionResult({ extractedContent: msg, includeInMemory: true });
+          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, clickMsg);
+          return new ActionResult({ extractedContent: clickMsg, includeInMemory: true });
         } catch (error) {
-          const msg = t('act_errors_elementNoLongerAvailable', [input.index.toString()]);
-          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, msg);
+          const failMsg = t('act_errors_elementNoLongerAvailable', [input.index.toString()]);
+          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, failMsg);
           return new ActionResult({
             error: error instanceof Error ? error.message : String(error),
           });
@@ -281,7 +280,7 @@ export class ActionBuilder {
 
     const guideUserClick = new Action(
       async (input: z.infer<typeof guideUserClickActionSchema.schema>) => {
-        const intent = input.intent || t('act_guideUserClick_start', [input.index.toString()]);
+        const intent = input.intent || msg.guideUserClick_start(input.index.toString());
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent, { uiHint: 'guide_active' });
 
         const page = await this.context.browserContext.getCurrentPage();
@@ -296,7 +295,7 @@ export class ActionBuilder {
         const elementText = elementNode.getAllTextTillNextClickableElement(2).trim();
         const instruction =
           input.instruction?.trim() ||
-          t('act_guideUserClick_instruction', [input.index.toString(), elementText || t('act_guideUserClick_target')]);
+          msg.guideUserClick_instruction(input.index.toString(), elementText || msg.guideUserClick_target);
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, instruction, { uiHint: 'guide_wait' });
 
         const timeoutMs = Math.max(5, input.timeoutSeconds || 45) * 1000;
@@ -312,12 +311,9 @@ export class ActionBuilder {
             break;
           }
           if (clickResult.reason === 'wrong-target') {
-            this.context.emitEvent(
-              Actors.NAVIGATOR,
-              ExecutionState.ACT_START,
-              t('act_guideUserClick_retry', [t('act_guideUserClick_wrongTarget')]),
-              { uiHint: 'guide_wait' },
-            );
+            this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, msg.guideUserClick_retry_wrongTarget, {
+              uiHint: 'guide_wait',
+            });
             continue;
           }
           break;
@@ -327,15 +323,15 @@ export class ActionBuilder {
           const failMsg =
             clickResult.reason === 'not-found'
               ? t('act_errors_elementNoLongerAvailable', [input.index.toString()])
-              : t('act_guideUserClick_retry', [t('act_guideUserClick_timeout')]);
+              : msg.guideUserClick_retry_timeout;
           this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, failMsg, { uiHint: 'guide_wait' });
           return new ActionResult({ error: failMsg, includeInMemory: true });
         }
 
-        const msg = t('act_guideUserClick_ok', [input.index.toString(), elementText || t('act_guideUserClick_target')]);
-        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg, { uiHint: 'guide_active' });
+        const okMsg = msg.guideUserClick_ok(input.index.toString(), elementText || msg.guideUserClick_target);
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, okMsg, { uiHint: 'guide_active' });
         return new ActionResult({
-          extractedContent: msg,
+          extractedContent: okMsg,
           includeInMemory: true,
         });
       },
@@ -346,7 +342,7 @@ export class ActionBuilder {
 
     const inputText = new Action(
       async (input: z.infer<typeof inputTextActionSchema.schema>) => {
-        const intent = input.intent || t('act_inputText_start', [input.index.toString()]);
+        const intent = input.intent || msg.inputText_start(input.index.toString());
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent);
 
         const page = await this.context.browserContext.getCurrentPage();
@@ -358,9 +354,9 @@ export class ActionBuilder {
         }
 
         await page.inputTextElementNode(this.context.options.useVision, elementNode, input.text);
-        const msg = t('act_inputText_ok', [input.text, input.index.toString()]);
-        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
-        return new ActionResult({ extractedContent: msg, includeInMemory: true });
+        const okMsg = msg.inputText_ok(input.text, input.index.toString());
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, okMsg);
+        return new ActionResult({ extractedContent: okMsg, includeInMemory: true });
       },
       inputTextActionSchema,
       true,

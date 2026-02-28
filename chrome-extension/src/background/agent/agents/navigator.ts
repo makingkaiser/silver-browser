@@ -28,7 +28,7 @@ import { convertZodToJsonSchema, repairJsonString } from '@src/background/utils'
 import { HistoryTreeProcessor } from '@src/background/browser/dom/history/service';
 import { AgentStepRecord } from '../history';
 import { type DOMHistoryElement } from '@src/background/browser/dom/history/view';
-import { t } from '@extension/i18n';
+import { getActionMessages } from '../actions/actionMessages';
 
 const logger = createLogger('NavigatorAgent');
 
@@ -167,7 +167,8 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
     let actionResults: ActionResult[] = [];
 
     try {
-      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.STEP_START, 'Navigating...');
+      const navMsg = getActionMessages(this.context.uiLanguage);
+      this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.STEP_START, navMsg.navigating);
 
       const messageManager = this.context.messageManager;
       // add the browser state message
@@ -399,14 +400,15 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
               intent?: string;
             };
             const optionText = typeof selectArgs.text === 'string' ? selectArgs.text.trim() : '';
+            const msg = getActionMessages(this.context.uiLanguage);
             actionName = 'guide_user_click';
             actionArgs = {
               index: selectArgs.index,
               intent: selectArgs.intent || '',
-              instruction: t('act_guideUserClick_instruction', [
+              instruction: msg.guideUserClick_instruction(
                 String(selectArgs.index ?? ''),
-                optionText || t('act_guideUserClick_target'),
-              ]),
+                optionText || msg.guideUserClick_target,
+              ),
             };
           }
         }

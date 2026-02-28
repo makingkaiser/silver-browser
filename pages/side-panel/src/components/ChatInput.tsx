@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { FaMicrophone } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { t } from '@extension/i18n';
+import { useSidePanel } from '../context/SidePanelContext';
 
 interface ChatInputProps {
   onSendMessage: (text: string, displayText?: string) => void;
@@ -34,6 +35,7 @@ export default function ChatInput({
   historicalSessionId,
   onReplay,
 }: ChatInputProps) {
+  const { ut, ts } = useSidePanel();
   const [text, setText] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const isSendButtonDisabled = useMemo(
@@ -204,10 +206,10 @@ export default function ChatInput({
           disabled={disabled}
           aria-disabled={disabled}
           rows={5}
-          className={`w-full resize-none border-none bg-white p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${
+          className={`w-full resize-none border-none bg-white p-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${ts('input')} ${
             disabled ? 'cursor-not-allowed opacity-60' : ''
           }`}
-          placeholder={attachedFiles.length > 0 ? 'Add a message (optional)...' : t('chat_input_placeholder')}
+          placeholder={attachedFiles.length > 0 ? 'Add a message (optional)...' : ut('input_placeholder')}
           aria-label={t('chat_input_editor')}
         />
 
@@ -272,8 +274,8 @@ export default function ChatInput({
             <button
               type="button"
               onClick={onStopTask}
-              className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-all hover:bg-red-600 active:scale-[0.98]">
-              {t('chat_buttons_stop')}
+              className={`rounded-lg bg-red-500 px-3 py-1.5 font-medium text-white transition-all hover:bg-red-600 active:scale-[0.98] ${ts('button')}`}>
+              {ut('btn_stop')}
             </button>
           ) : historicalSessionId ? (
             <button
@@ -281,16 +283,16 @@ export default function ChatInput({
               onClick={handleReplay}
               disabled={!historicalSessionId}
               aria-disabled={!historicalSessionId}
-              className={`rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white transition-all hover:enabled:bg-emerald-600 active:enabled:scale-[0.98] ${!historicalSessionId ? 'cursor-not-allowed opacity-40' : ''}`}>
-              {t('chat_buttons_replay')}
+              className={`rounded-lg bg-emerald-500 px-3 py-1.5 font-medium text-white transition-all hover:enabled:bg-emerald-600 active:enabled:scale-[0.98] ${ts('button')} ${!historicalSessionId ? 'cursor-not-allowed opacity-40' : ''}`}>
+              {ut('btn_replay')}
             </button>
           ) : (
             <button
               type="submit"
               disabled={isSendButtonDisabled}
               aria-disabled={isSendButtonDisabled}
-              className={`rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white transition-all hover:enabled:bg-emerald-600 active:enabled:scale-[0.98] ${isSendButtonDisabled ? 'cursor-not-allowed opacity-40' : ''}`}>
-              {t('chat_buttons_send')}
+              className={`rounded-lg bg-emerald-500 px-3 py-1.5 font-medium text-white transition-all hover:enabled:bg-emerald-600 active:enabled:scale-[0.98] ${ts('button')} ${isSendButtonDisabled ? 'cursor-not-allowed opacity-40' : ''}`}>
+              {ut('btn_send')}
             </button>
           )}
         </div>

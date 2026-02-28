@@ -19,10 +19,12 @@ import ModeToggle, { type InteractionMode } from './components/ModeToggle';
 import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
 import { EventType, type AgentEvent, ExecutionState } from './types/event';
+import { SidePanelProvider, useSidePanel } from './context/SidePanelContext';
+import { LANGUAGE_OPTIONS, isUILanguage, type UILanguage } from './i18n/translations';
 import './SidePanel.css';
 
 const MIN_MESSAGE_FONT_SIZE = 0;
-const MAX_MESSAGE_FONT_SIZE = 2;
+const MAX_MESSAGE_FONT_SIZE = 5;
 
 function clampMessageFontSize(size: number): number {
   return Math.min(MAX_MESSAGE_FONT_SIZE, Math.max(MIN_MESSAGE_FONT_SIZE, Math.round(size)));
@@ -51,7 +53,8 @@ const SidePanel = () => {
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
   const [collapsePlannerMessages, setCollapsePlannerMessages] = useState(true);
-  const [messageFontSize, setMessageFontSize] = useState(1);
+  const [messageFontSize, setMessageFontSize] = useState(3);
+  const [uiLanguage, setUiLanguage] = useState<UILanguage>('en');
   const [isTaskRunning, setIsTaskRunning] = useState(false);
   const [isGuideWaiting, setIsGuideWaiting] = useState(false);
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('default');
@@ -82,11 +85,13 @@ const SidePanel = () => {
       setReplayEnabled(settings.replayHistoricalTasks);
       setCollapsePlannerMessages(settings.collapsePlannerMessages);
       setMessageFontSize(clampMessageFontSize(settings.messageFontSize));
+      setUiLanguage(isUILanguage(settings.uiLanguage) ? settings.uiLanguage : 'en');
     } catch (error) {
       console.error('Error loading general settings:', error);
       setReplayEnabled(false);
       setCollapsePlannerMessages(true);
-      setMessageFontSize(1);
+      setMessageFontSize(3);
+      setUiLanguage('en');
     }
   }, []);
 
@@ -117,6 +122,14 @@ const SidePanel = () => {
         }
         return nextSize;
       });
+    },
+    [updateGeneralSettings],
+  );
+
+  const handleLanguageChange = useCallback(
+    (lang: UILanguage) => {
+      setUiLanguage(lang);
+      void updateGeneralSettings({ uiLanguage: lang });
     },
     [updateGeneralSettings],
   );
@@ -1037,204 +1050,213 @@ const SidePanel = () => {
   };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-      <header className="flex items-center justify-between border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
-        <div className="flex items-center">
-          {showHistory ? (
+    <SidePanelProvider fontSize={messageFontSize} language={uiLanguage}>
+      <div className="flex h-screen flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+        <header className="flex items-center justify-between border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
+          <div className="flex items-center">
+            {showHistory ? (
+              <button
+                type="button"
+                onClick={() => handleBackToChat(false)}
+                className="cursor-pointer text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                aria-label={t('nav_back_a11y')}>
+                {t('nav_back')}
+              </button>
+            ) : (
+              <img src="/icon-128.png" alt="Extension Logo" className="size-6" />
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {!showHistory && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleNewChat}
+                  className="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800"
+                  aria-label={t('nav_newChat_a11y')}
+                  tabIndex={0}>
+                  <PiPlusBold size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLoadHistory}
+                  className="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800"
+                  aria-label={t('nav_loadHistory_a11y')}
+                  tabIndex={0}>
+                  <GrHistory size={18} />
+                </button>
+              </>
+            )}
+            {!showHistory && messages.length > 0 && (
+              <>
+                <div className="mx-0.5 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <button
+                  type="button"
+                  onClick={handleTogglePlannerMessages}
+                  className={`cursor-pointer rounded-lg p-1 transition-colors ${
+                    collapsePlannerMessages
+                      ? 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800'
+                      : 'text-amber-500 hover:bg-zinc-100 hover:text-amber-600 dark:hover:bg-zinc-800'
+                  }`}
+                  aria-pressed={!collapsePlannerMessages}
+                  aria-label={t('chat_toolbar_planToggle_a11y')}
+                  tabIndex={0}>
+                  {collapsePlannerMessages ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                </button>
+              </>
+            )}
+            {!showHistory && (
+              <>
+                <div className="mx-0.5 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <button
+                  type="button"
+                  onClick={() => handleAdjustMessageFontSize(-1)}
+                  disabled={messageFontSize <= MIN_MESSAGE_FONT_SIZE}
+                  className={`cursor-pointer rounded-lg p-1 transition-colors ${
+                    messageFontSize <= MIN_MESSAGE_FONT_SIZE
+                      ? 'cursor-not-allowed text-zinc-300 dark:text-zinc-600'
+                      : 'text-zinc-400 hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800'
+                  }`}
+                  aria-label={t('chat_toolbar_fontDecrease_a11y')}
+                  tabIndex={0}>
+                  <FiMinus size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAdjustMessageFontSize(1)}
+                  disabled={messageFontSize >= MAX_MESSAGE_FONT_SIZE}
+                  className={`cursor-pointer rounded-lg p-1 transition-colors ${
+                    messageFontSize >= MAX_MESSAGE_FONT_SIZE
+                      ? 'cursor-not-allowed text-zinc-300 dark:text-zinc-600'
+                      : 'text-zinc-400 hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800'
+                  }`}
+                  aria-label={t('chat_toolbar_fontIncrease_a11y')}
+                  tabIndex={0}>
+                  <FiPlus size={16} />
+                </button>
+                <select
+                  value={uiLanguage}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (isUILanguage(val)) handleLanguageChange(val);
+                  }}
+                  className="cursor-pointer rounded-lg border-none bg-transparent px-1 py-0.5 text-xs font-medium text-zinc-400 outline-none transition-colors hover:text-emerald-500 dark:text-zinc-400"
+                  aria-label="Language">
+                  {LANGUAGE_OPTIONS.map(opt => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.nativeName}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
             <button
               type="button"
-              onClick={() => handleBackToChat(false)}
-              className="cursor-pointer text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              aria-label={t('nav_back_a11y')}>
-              {t('nav_back')}
+              onClick={() => chrome.runtime.openOptionsPage()}
+              className="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800"
+              aria-label={t('nav_settings_a11y')}
+              tabIndex={0}>
+              <FiSettings size={18} />
             </button>
-          ) : (
-            <img src="/icon-128.png" alt="Extension Logo" className="size-6" />
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {!showHistory && (
-            <>
-              <button
-                type="button"
-                onClick={handleNewChat}
-                className="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800"
-                aria-label={t('nav_newChat_a11y')}
-                tabIndex={0}>
-                <PiPlusBold size={18} />
-              </button>
-              <button
-                type="button"
-                onClick={handleLoadHistory}
-                className="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800"
-                aria-label={t('nav_loadHistory_a11y')}
-                tabIndex={0}>
-                <GrHistory size={18} />
-              </button>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => chrome.runtime.openOptionsPage()}
-            className="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-500 dark:hover:bg-zinc-800"
-            aria-label={t('nav_settings_a11y')}
-            tabIndex={0}>
-            <FiSettings size={18} />
-          </button>
-        </div>
-      </header>
+          </div>
+        </header>
 
-      {showHistory ? (
-        <div className="flex-1 overflow-hidden">
-          <ChatHistoryList
-            sessions={chatSessions}
-            onSessionSelect={handleSessionSelect}
-            onSessionDelete={handleSessionDelete}
-            onSessionBookmark={handleSessionBookmark}
-            visible={true}
-          />
-        </div>
-      ) : (
-        <>
-          {hasConfiguredModels === null && (
-            <div className="flex flex-1 items-start p-6">
-              <div>
-                <div
-                  className="mb-3 h-5 w-32 rounded-lg bg-zinc-100 dark:bg-zinc-800"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.1) 50%, transparent 100%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.5s infinite ease-in-out',
-                  }}
-                />
-                <div className="h-3 w-48 rounded-lg bg-zinc-100 opacity-60 dark:bg-zinc-800" />
-              </div>
-            </div>
-          )}
-
-          {hasConfiguredModels === false && (
-            <div className="flex flex-1 items-start p-6">
-              <div className="max-w-sm">
-                <img src="/icon-128.png" alt="Nanobrowser Logo" className="mb-6 size-10" />
-                <h3 className="mb-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                  {t('welcome_title')}
-                </h3>
-                <p className="mb-6 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                  {t('welcome_instruction')}
-                </p>
-                <button
-                  onClick={() => chrome.runtime.openOptionsPage()}
-                  className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-600 active:scale-[0.98]">
-                  {t('welcome_openSettings')}
-                </button>
-                <div className="mt-6 flex gap-3 text-xs text-zinc-400">
-                  <a
-                    href="https://github.com/nanobrowser/nanobrowser?tab=readme-ov-file#-quick-start"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-emerald-500">
-                    {t('welcome_quickStart')}
-                  </a>
-                  <span>·</span>
-                  <a
-                    href="https://discord.gg/NN3ABHggMK"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-emerald-500">
-                    {t('welcome_joinCommunity')}
-                  </a>
+        {showHistory ? (
+          <div className="flex-1 overflow-hidden">
+            <ChatHistoryList
+              sessions={chatSessions}
+              onSessionSelect={handleSessionSelect}
+              onSessionDelete={handleSessionDelete}
+              onSessionBookmark={handleSessionBookmark}
+              visible={true}
+            />
+          </div>
+        ) : (
+          <>
+            {hasConfiguredModels === null && (
+              <div className="flex flex-1 items-start p-6">
+                <div>
+                  <div
+                    className="mb-3 h-5 w-32 rounded-lg bg-zinc-100 dark:bg-zinc-800"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.1) 50%, transparent 100%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite ease-in-out',
+                    }}
+                  />
+                  <div className="h-3 w-48 rounded-lg bg-zinc-100 opacity-60 dark:bg-zinc-800" />
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {hasConfiguredModels === true && (
-            <>
-              {messages.length === 0 && (
-                <>
-                  <div className="mb-2 border-t border-zinc-200 p-2 dark:border-zinc-800">
+            {hasConfiguredModels === false && <WelcomeScreen />}
+
+            {hasConfiguredModels === true && (
+              <>
+                {messages.length === 0 && (
+                  <>
+                    <div className="mb-2 border-t border-zinc-200 p-2 dark:border-zinc-800">
+                      <ModeToggle value={interactionMode} onChange={handleInteractionModeChange} />
+                      <ChatInput {...chatInputProps} />
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                      <BookmarkList
+                        bookmarks={favoritePrompts}
+                        onBookmarkSelect={handleBookmarkSelect}
+                        onBookmarkUpdateTitle={handleBookmarkUpdateTitle}
+                        onBookmarkDelete={handleBookmarkDelete}
+                        onBookmarkReorder={handleBookmarkReorder}
+                      />
+                    </div>
+                  </>
+                )}
+                {messages.length > 0 && (
+                  <div className="scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-3">
+                    <MessageList
+                      messages={messages}
+                      collapsePlannerMessages={collapsePlannerMessages}
+                      fontSize={messageFontSize}
+                    />
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+                {messages.length > 0 && (
+                  <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
                     <ModeToggle value={interactionMode} onChange={handleInteractionModeChange} />
                     <ChatInput {...chatInputProps} />
                   </div>
-                  <div className="flex-1 overflow-y-auto">
-                    <BookmarkList
-                      bookmarks={favoritePrompts}
-                      onBookmarkSelect={handleBookmarkSelect}
-                      onBookmarkUpdateTitle={handleBookmarkUpdateTitle}
-                      onBookmarkDelete={handleBookmarkDelete}
-                      onBookmarkReorder={handleBookmarkReorder}
-                    />
-                  </div>
-                </>
-              )}
-              {messages.length > 0 && (
-                <div className="scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-3">
-                  <div className="sticky top-0 z-10 -mx-3 mb-3 border-b border-zinc-200/80 bg-zinc-50/95 px-3 py-2 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-950/95">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleTogglePlannerMessages}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-                          collapsePlannerMessages
-                            ? 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                            : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60'
-                        }`}
-                        aria-pressed={!collapsePlannerMessages}
-                        aria-label={t('chat_toolbar_planToggle_a11y')}>
-                        {collapsePlannerMessages ? <FiEyeOff className="size-3.5" /> : <FiEye className="size-3.5" />}
-                        <span>{t('chat_toolbar_plan')}</span>
-                      </button>
-
-                      <div className="ml-auto inline-flex items-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
-                        <button
-                          type="button"
-                          onClick={() => handleAdjustMessageFontSize(-1)}
-                          disabled={messageFontSize <= MIN_MESSAGE_FONT_SIZE}
-                          className={`inline-flex size-7 items-center justify-center transition-colors ${
-                            messageFontSize <= MIN_MESSAGE_FONT_SIZE
-                              ? 'cursor-not-allowed text-zinc-400 dark:text-zinc-600'
-                              : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                          }`}
-                          aria-label={t('chat_toolbar_fontDecrease_a11y')}>
-                          <FiMinus className="size-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAdjustMessageFontSize(1)}
-                          disabled={messageFontSize >= MAX_MESSAGE_FONT_SIZE}
-                          className={`inline-flex size-7 items-center justify-center border-l border-zinc-200 transition-colors dark:border-zinc-700 ${
-                            messageFontSize >= MAX_MESSAGE_FONT_SIZE
-                              ? 'cursor-not-allowed text-zinc-400 dark:text-zinc-600'
-                              : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                          }`}
-                          aria-label={t('chat_toolbar_fontIncrease_a11y')}>
-                          <FiPlus className="size-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <MessageList
-                    messages={messages}
-                    collapsePlannerMessages={collapsePlannerMessages}
-                    fontSize={messageFontSize}
-                  />
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-              {messages.length > 0 && (
-                <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
-                  <ModeToggle value={interactionMode} onChange={handleInteractionModeChange} />
-                  <ChatInput {...chatInputProps} />
-                </div>
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </SidePanelProvider>
   );
 };
+
+function WelcomeScreen() {
+  const { ut, ts } = useSidePanel();
+  return (
+    <div className="flex flex-1 items-start p-6">
+      <div className="max-w-sm">
+        <img src="/icon-128.png" alt="SilverBrowser Logo" className="mb-6 size-10" />
+        <h3 className={`mb-2 font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 ${ts('heading')}`}>
+          {ut('welcome_title')}
+        </h3>
+        <p className={`mb-6 leading-relaxed text-zinc-500 dark:text-zinc-400 ${ts('body')}`}>
+          {ut('welcome_instruction')}
+        </p>
+        <button
+          onClick={() => chrome.runtime.openOptionsPage()}
+          className={`rounded-xl bg-emerald-500 px-5 py-2.5 font-medium text-white transition-all hover:bg-emerald-600 active:scale-[0.98] ${ts('button')}`}>
+          {ut('welcome_openSettings')}
+        </button>
+        <div className={`mt-6 flex gap-3 text-zinc-400 ${ts('label')}`} />
+      </div>
+    </div>
+  );
+}
 
 export default SidePanel;

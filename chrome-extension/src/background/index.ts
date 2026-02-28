@@ -353,6 +353,7 @@ async function setupExecutor(
   browserContext.updateConfig({
     minimumWaitPageLoadTime: generalSettings.minWaitPageLoad / 1000.0,
     displayHighlights: generalSettings.displayHighlights,
+    flashHighlightsForVision: interactionMode !== 'guided',
   });
 
   const executor = new Executor(task, taskId, browserContext, navigatorLLM, {

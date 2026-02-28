@@ -52,6 +52,7 @@ export class AgentContext {
   history: AgentStepHistory;
   finalAnswer: string | null;
   interactionMode: InteractionMode;
+  uiLanguage: string;
   private guideUserNotes: string[];
 
   constructor(
@@ -78,6 +79,7 @@ export class AgentContext {
     this.history = new AgentStepHistory();
     this.finalAnswer = null;
     this.interactionMode = 'default';
+    this.uiLanguage = 'en';
     this.guideUserNotes = [];
   }
 

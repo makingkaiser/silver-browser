@@ -4,27 +4,32 @@ import { type HumanMessage, SystemMessage } from '@langchain/core/messages';
 import type { AgentContext } from '@src/background/agent/types';
 import { createLogger } from '@src/background/log';
 import { navigatorSystemPromptTemplate } from './templates/navigator';
+import { buildLanguageInstruction } from './languageInstruction';
 
 const logger = createLogger('agent/prompts/navigator');
 
 export class NavigatorPrompt extends BasePrompt {
   private systemMessage: SystemMessage;
 
-  constructor(private readonly maxActionsPerStep = 10) {
+  constructor(
+    private readonly maxActionsPerStep = 10,
+    uiLanguage = 'en',
+  ) {
     super();
 
-    const promptTemplate = navigatorSystemPromptTemplate;
-    // Format the template with the maxActionsPerStep
-    const formattedPrompt = promptTemplate.replace('{{max_actions}}', this.maxActionsPerStep.toString()).trim();
+    let formattedPrompt = navigatorSystemPromptTemplate
+      .replace('{{max_actions}}', this.maxActionsPerStep.toString())
+      .trim();
+
+    const langInstruction = buildLanguageInstruction(uiLanguage);
+    if (langInstruction) {
+      formattedPrompt += `\n\n${langInstruction}`;
+    }
+
     this.systemMessage = new SystemMessage(formattedPrompt);
   }
 
   getSystemMessage(): SystemMessage {
-    /**
-     * Get the system prompt for the agent.
-     *
-     * @returns SystemMessage containing the formatted system prompt
-     */
     return this.systemMessage;
   }
 

@@ -10,7 +10,7 @@ window.buildDomTree = (
 ) => {
   const { showHighlightElements, focusHighlightIndex, viewportExpansion, startHighlightIndex, startId, debugMode } =
     args;
-  // Make sure to do highlight elements always, but we can hide the highlights if needed
+  // Render highlights every run so hidden overlays can be flashed for vision screenshots when needed.
   const doHighlightElements = true;
 
   let highlightIndex = startHighlightIndex; // Reset highlight index
@@ -149,10 +149,10 @@ window.buildDomTree = (
         // Use the maximum valid value in zIndex to ensure the element is not blocked by overlapping elements.
         container.style.zIndex = '2147483647';
         container.style.backgroundColor = 'transparent';
-        // Show or hide the container based on the showHighlightElements flag
-        container.style.display = showHighlightElements ? 'block' : 'none';
         document.body.appendChild(container);
       }
+      // Keep container visibility in sync with the current run, even if the container already existed.
+      container.style.display = showHighlightElements ? 'block' : 'none';
 
       if (focusHighlightIndex >= 0) {
         let styleEl = document.getElementById('nano-highlight-style');
@@ -163,6 +163,16 @@ window.buildDomTree = (
             @keyframes nano-pulse {
               0%, 100% { opacity: 1; }
               50% { opacity: 0.6; }
+            }
+            @keyframes nano-focus-pulse {
+              0%, 100% {
+                transform: scale(1);
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 0 0 3px var(--nano-focus-color);
+              }
+              50% {
+                transform: scale(1.015);
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16), 0 0 0 6px var(--nano-focus-color);
+              }
             }
           `;
           document.head.appendChild(styleEl);
@@ -212,7 +222,9 @@ window.buildDomTree = (
 
         if (focusHighlightIndex >= 0) {
           if (index === focusHighlightIndex) {
-            overlay.style.animation = 'nano-pulse 1.5s ease-in-out infinite';
+            overlay.style.setProperty('--nano-focus-color', baseColor + 'CC');
+            overlay.style.animation = 'nano-focus-pulse 1.2s ease-in-out infinite';
+            overlay.style.transformOrigin = 'center center';
             overlay.style.border = `2px solid ${baseColor}`;
             overlay.style.backgroundColor = baseColor + '1A';
           } else {
@@ -224,50 +236,49 @@ window.buildDomTree = (
         overlays.push({ element: overlay, initialRect: rect });
       }
 
-      // Create and position a single label relative to the first rect
-      const firstRect = rects[0];
-      label = document.createElement('div');
-      label.className = 'playwright-highlight-label';
-      label.style.position = 'fixed';
-      label.style.background = baseColor + 'E6';
-      label.style.color = 'white';
-      label.style.padding = '2px 6px';
-      label.style.borderRadius = '6px';
-      label.style.fontSize = '11px';
-      label.style.fontWeight = '600';
-      label.style.fontFamily = "'Geist Mono', ui-monospace, SFMono-Regular, monospace";
-      label.style.lineHeight = '1.2';
-      label.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
-      label.style.letterSpacing = '0.02em';
-      label.textContent = index.toString();
+      // In guided focus mode we only render the target box (no numeric chip for users).
+      if (focusHighlightIndex < 0) {
+        // Create and position a single label relative to the first rect
+        const firstRect = rects[0];
+        label = document.createElement('div');
+        label.className = 'playwright-highlight-label';
+        label.style.position = 'fixed';
+        label.style.background = baseColor + 'E6';
+        label.style.color = 'white';
+        label.style.padding = '2px 6px';
+        label.style.borderRadius = '6px';
+        label.style.fontSize = '11px';
+        label.style.fontWeight = '600';
+        label.style.fontFamily = "'Geist Mono', ui-monospace, SFMono-Regular, monospace";
+        label.style.lineHeight = '1.2';
+        label.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+        label.style.letterSpacing = '0.02em';
+        label.textContent = index.toString();
 
-      labelWidth = label.offsetWidth > 0 ? label.offsetWidth : labelWidth; // Update actual width if possible
-      labelHeight = label.offsetHeight > 0 ? label.offsetHeight : labelHeight; // Update actual height if possible
+        labelWidth = label.offsetWidth > 0 ? label.offsetWidth : labelWidth; // Update actual width if possible
+        labelHeight = label.offsetHeight > 0 ? label.offsetHeight : labelHeight; // Update actual height if possible
 
-      const firstRectTop = firstRect.top + iframeOffset.y;
-      const firstRectLeft = firstRect.left + iframeOffset.x;
+        const firstRectTop = firstRect.top + iframeOffset.y;
+        const firstRectLeft = firstRect.left + iframeOffset.x;
 
-      let labelTop = firstRectTop - labelHeight - 4;
-      let labelLeft = firstRectLeft + firstRect.width - labelWidth;
+        let labelTop = firstRectTop - labelHeight - 4;
+        let labelLeft = firstRectLeft + firstRect.width - labelWidth;
 
-      if (labelTop < 0) {
-        labelTop = firstRectTop + 2;
-        labelLeft = firstRectLeft + firstRect.width - labelWidth - 2;
+        if (labelTop < 0) {
+          labelTop = firstRectTop + 2;
+          labelLeft = firstRectLeft + firstRect.width - labelWidth - 2;
+        }
+        if (labelLeft < iframeOffset.x) labelLeft = firstRectLeft;
+
+        // Ensure label stays within viewport bounds slightly better
+        labelTop = Math.max(0, Math.min(labelTop, window.innerHeight - labelHeight));
+        labelLeft = Math.max(0, Math.min(labelLeft, window.innerWidth - labelWidth));
+
+        label.style.top = `${labelTop}px`;
+        label.style.left = `${labelLeft}px`;
+
+        fragment.appendChild(label);
       }
-      if (labelLeft < iframeOffset.x) labelLeft = firstRectLeft;
-
-      // Ensure label stays within viewport bounds slightly better
-      labelTop = Math.max(0, Math.min(labelTop, window.innerHeight - labelHeight));
-      labelLeft = Math.max(0, Math.min(labelLeft, window.innerWidth - labelWidth));
-
-      label.style.top = `${labelTop}px`;
-      label.style.left = `${labelLeft}px`;
-
-      if (focusHighlightIndex >= 0 && index !== focusHighlightIndex) {
-        label.style.opacity = '0.3';
-      }
-
-      fragment.appendChild(label);
 
       // Update positions on scroll/resize
       const updatePositions = () => {

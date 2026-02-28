@@ -10,11 +10,7 @@ interface MessageListProps {
   fontSize: number;
 }
 
-const FONT_SIZE_CLASS_MAP = {
-  0: 'text-xs',
-  1: 'text-sm',
-  2: 'text-base',
-} as const;
+const FONT_SIZE_CLASSES = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'] as const;
 
 interface MessageRun {
   key: string;
@@ -22,10 +18,18 @@ interface MessageRun {
   messages: Message[];
 }
 
-function clampFontSize(fontSize: number): 0 | 1 | 2 {
-  if (fontSize <= 0) return 0;
-  if (fontSize >= 2) return 2;
-  return 1;
+const PROGRESS_MESSAGE = 'Showing progress...';
+
+function clampFontSize(fontSize: number): number {
+  return Math.max(0, Math.min(FONT_SIZE_CLASSES.length - 1, Math.round(fontSize)));
+}
+
+function isProgressMessage(content: string): boolean {
+  return content === PROGRESS_MESSAGE;
+}
+
+function isPlannerRunLoading(run: MessageRun): boolean {
+  return run.actor === Actors.PLANNER && run.messages.some(message => isProgressMessage(message.content));
 }
 
 export default memo(function MessageList({ messages, collapsePlannerMessages, fontSize }: MessageListProps) {
@@ -74,13 +78,14 @@ export default memo(function MessageList({ messages, collapsePlannerMessages, fo
     }));
   }, []);
 
-  const messageTextSizeClass = FONT_SIZE_CLASS_MAP[clampFontSize(fontSize)];
+  const messageTextSizeClass = FONT_SIZE_CLASSES[clampFontSize(fontSize)];
 
   return (
     <div className="max-w-full space-y-1">
       {messageRuns.flatMap(run => {
         const isPlannerRun = run.actor === Actors.PLANNER;
-        const isExpanded = plannerRunExpanded[run.key] ?? !collapsePlannerMessages;
+        const isLoading = isPlannerRunLoading(run);
+        const isExpanded = isLoading || (plannerRunExpanded[run.key] ?? !collapsePlannerMessages);
 
         if (isPlannerRun && !isExpanded) {
           const firstMessage = run.messages[0];
@@ -167,7 +172,7 @@ function MessageBlock({ message, isSameActor, hideContent, messageTextSizeClass,
   const actorKey = message.actor as keyof typeof ACTOR_COLORS;
   const actorColor = ACTOR_COLORS[actorKey];
   const actorProfile = ACTOR_PROFILES[message.actor as keyof typeof ACTOR_PROFILES];
-  const isProgress = message.content === 'Showing progress...';
+  const isProgress = isProgressMessage(message.content);
 
   return (
     <div
