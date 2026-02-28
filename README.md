@@ -74,7 +74,7 @@ pnpm type-check # TypeScript checks
 pnpm lint       # ESLint with auto-fix
 ```
 
-See [CLAUDE.md](CLAUDE.md) for full architecture documentation, workspace structure, and contribution guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## Project structure
 
