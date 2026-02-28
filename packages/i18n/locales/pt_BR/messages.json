@@ -76,6 +76,18 @@
   "chat_modeToggle_guide_desc": {
     "message": "O agente destaca, você clica"
   },
+  "chat_toolbar_plan": {
+    "message": "Plano"
+  },
+  "chat_toolbar_planToggle_a11y": {
+    "message": "Alternar colapso das mensagens do planejador"
+  },
+  "chat_toolbar_fontDecrease_a11y": {
+    "message": "Diminuir tamanho da fonte das mensagens"
+  },
+  "chat_toolbar_fontIncrease_a11y": {
+    "message": "Aumentar tamanho da fonte das mensagens"
+  },
   "chat_input_placeholder": {
     "message": "Como posso ajudar?"
   },
@@ -273,6 +285,27 @@
   },
   "options_general_replayHistoricalTasks_desc": {
     "message": "Ativar o armazenamento e a reprodução do histórico de passos do agente (experimental, pode ter problemas)"
+  },
+  "options_general_collapsePlannerMessages": {
+    "message": "Recolher Mensagens do Planejador"
+  },
+  "options_general_collapsePlannerMessages_desc": {
+    "message": "Recolher grupos de mensagens do planejador por padrão no chat"
+  },
+  "options_general_messageFontSize": {
+    "message": "Tamanho da Fonte das Mensagens"
+  },
+  "options_general_messageFontSize_desc": {
+    "message": "Ajustar o tamanho do texto das mensagens no painel lateral"
+  },
+  "options_general_messageFontSize_small": {
+    "message": "Pequeno"
+  },
+  "options_general_messageFontSize_default": {
+    "message": "Padrão"
+  },
+  "options_general_messageFontSize_large": {
+    "message": "Grande"
   },
   "options_models_providers_header": {
     "message": "Provedores de LLM"

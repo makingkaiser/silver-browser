@@ -76,6 +76,18 @@
   "chat_modeToggle_guide_desc": {
     "message": "Agent highlights, you click"
   },
+  "chat_toolbar_plan": {
+    "message": "Plan"
+  },
+  "chat_toolbar_planToggle_a11y": {
+    "message": "Toggle planner message collapse"
+  },
+  "chat_toolbar_fontDecrease_a11y": {
+    "message": "Decrease message font size"
+  },
+  "chat_toolbar_fontIncrease_a11y": {
+    "message": "Increase message font size"
+  },
   "chat_input_placeholder": {
     "message": "What can I help you with?"
   },
@@ -273,6 +285,27 @@
   },
   "options_general_replayHistoricalTasks_desc": {
     "message": "Enable storing and replaying of agent step history (experimental, may have issues)"
+  },
+  "options_general_collapsePlannerMessages": {
+    "message": "Collapse Planner Messages"
+  },
+  "options_general_collapsePlannerMessages_desc": {
+    "message": "Collapse planner message groups by default in chat"
+  },
+  "options_general_messageFontSize": {
+    "message": "Message Font Size"
+  },
+  "options_general_messageFontSize_desc": {
+    "message": "Adjust message text size in the side panel"
+  },
+  "options_general_messageFontSize_small": {
+    "message": "Small"
+  },
+  "options_general_messageFontSize_default": {
+    "message": "Default"
+  },
+  "options_general_messageFontSize_large": {
+    "message": "Large"
   },
 
   "options_models_providers_header": {

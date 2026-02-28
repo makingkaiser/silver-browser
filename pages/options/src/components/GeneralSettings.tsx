@@ -27,6 +27,12 @@ export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) =>
     setSettings(latestSettings);
   };
 
+  const handleMessageFontSizeChange = (value: string) => {
+    const parsedValue = Number.parseInt(value, 10);
+    const clampedValue = Math.min(2, Math.max(0, Number.isNaN(parsedValue) ? 1 : parsedValue));
+    void updateSetting('messageFontSize', clampedValue);
+  };
+
   return (
     <section className="space-y-6">
       <div
@@ -227,6 +233,54 @@ export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) =>
                 <span className="sr-only">{t('options_general_replayHistoricalTasks')}</span>
               </label>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {t('options_general_collapsePlannerMessages')}
+              </h3>
+              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {t('options_general_collapsePlannerMessages_desc')}
+              </p>
+            </div>
+            <div className="relative inline-flex cursor-pointer items-center">
+              <input
+                id="collapsePlannerMessages"
+                type="checkbox"
+                checked={settings.collapsePlannerMessages}
+                onChange={e => updateSetting('collapsePlannerMessages', e.target.checked)}
+                className="peer sr-only"
+              />
+              <label
+                htmlFor="collapsePlannerMessages"
+                className={`peer h-6 w-11 rounded-full ${isDarkMode ? 'bg-slate-600' : 'bg-gray-200'} after:absolute after:left-[2px] after:top-[2px] after:size-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
+                <span className="sr-only">{t('options_general_collapsePlannerMessages')}</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {t('options_general_messageFontSize')}
+              </h3>
+              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {t('options_general_messageFontSize_desc')}
+              </p>
+            </div>
+            <label htmlFor="messageFontSize" className="sr-only">
+              {t('options_general_messageFontSize')}
+            </label>
+            <select
+              id="messageFontSize"
+              value={settings.messageFontSize}
+              onChange={e => handleMessageFontSizeChange(e.target.value)}
+              className={`w-24 rounded-md border ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'} px-3 py-2`}>
+              <option value={0}>{t('options_general_messageFontSize_small')}</option>
+              <option value={1}>{t('options_general_messageFontSize_default')}</option>
+              <option value={2}>{t('options_general_messageFontSize_large')}</option>
+            </select>
           </div>
         </div>
       </div>

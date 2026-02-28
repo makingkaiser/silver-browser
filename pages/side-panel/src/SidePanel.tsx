@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FiSettings } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiMinus, FiPlus, FiSettings } from 'react-icons/fi';
 import { PiPlusBold } from 'react-icons/pi';
 import { GrHistory } from 'react-icons/gr';
-import { type Message, Actors, chatHistoryStore, agentModelStore, generalSettingsStore } from '@extension/storage';
+import {
+  type Message,
+  type GeneralSettingsConfig,
+  Actors,
+  chatHistoryStore,
+  agentModelStore,
+  generalSettingsStore,
+} from '@extension/storage';
 import favoritesStorage, { type FavoritePrompt } from '@extension/storage/lib/prompt/favorites';
 import { t } from '@extension/i18n';
 import MessageList from './components/MessageList';
@@ -13,6 +20,13 @@ import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
 import { EventType, type AgentEvent, ExecutionState } from './types/event';
 import './SidePanel.css';
+
+const MIN_MESSAGE_FONT_SIZE = 0;
+const MAX_MESSAGE_FONT_SIZE = 2;
+
+function clampMessageFontSize(size: number): number {
+  return Math.min(MAX_MESSAGE_FONT_SIZE, Math.max(MIN_MESSAGE_FONT_SIZE, Math.round(size)));
+}
 
 declare global {
   interface Window {
@@ -36,6 +50,8 @@ const SidePanel = () => {
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
+  const [collapsePlannerMessages, setCollapsePlannerMessages] = useState(true);
+  const [messageFontSize, setMessageFontSize] = useState(1);
   const [isTaskRunning, setIsTaskRunning] = useState(false);
   const [isGuideWaiting, setIsGuideWaiting] = useState(false);
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('default');
@@ -64,11 +80,46 @@ const SidePanel = () => {
     try {
       const settings = await generalSettingsStore.getSettings();
       setReplayEnabled(settings.replayHistoricalTasks);
+      setCollapsePlannerMessages(settings.collapsePlannerMessages);
+      setMessageFontSize(clampMessageFontSize(settings.messageFontSize));
     } catch (error) {
       console.error('Error loading general settings:', error);
       setReplayEnabled(false);
+      setCollapsePlannerMessages(true);
+      setMessageFontSize(1);
     }
   }, []);
+
+  const updateGeneralSettings = useCallback(
+    async (updates: Partial<GeneralSettingsConfig>) => {
+      try {
+        await generalSettingsStore.updateSettings(updates);
+      } catch (error) {
+        console.error('Failed to update general settings:', error);
+        await loadGeneralSettings();
+      }
+    },
+    [loadGeneralSettings],
+  );
+
+  const handleTogglePlannerMessages = useCallback(() => {
+    const nextValue = !collapsePlannerMessages;
+    setCollapsePlannerMessages(nextValue);
+    void updateGeneralSettings({ collapsePlannerMessages: nextValue });
+  }, [collapsePlannerMessages, updateGeneralSettings]);
+
+  const handleAdjustMessageFontSize = useCallback(
+    (delta: -1 | 1) => {
+      setMessageFontSize(prevSize => {
+        const nextSize = clampMessageFontSize(prevSize + delta);
+        if (nextSize !== prevSize) {
+          void updateGeneralSettings({ messageFontSize: nextSize });
+        }
+        return nextSize;
+      });
+    },
+    [updateGeneralSettings],
+  );
 
   useEffect(() => {
     checkModelConfiguration();
@@ -1119,7 +1170,56 @@ const SidePanel = () => {
               )}
               {messages.length > 0 && (
                 <div className="scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-3">
-                  <MessageList messages={messages} />
+                  <div className="sticky top-0 z-10 -mx-3 mb-3 border-b border-zinc-200/80 bg-zinc-50/95 px-3 py-2 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-950/95">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleTogglePlannerMessages}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+                          collapsePlannerMessages
+                            ? 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                            : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60'
+                        }`}
+                        aria-pressed={!collapsePlannerMessages}
+                        aria-label={t('chat_toolbar_planToggle_a11y')}>
+                        {collapsePlannerMessages ? <FiEyeOff className="size-3.5" /> : <FiEye className="size-3.5" />}
+                        <span>{t('chat_toolbar_plan')}</span>
+                      </button>
+
+                      <div className="ml-auto inline-flex items-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustMessageFontSize(-1)}
+                          disabled={messageFontSize <= MIN_MESSAGE_FONT_SIZE}
+                          className={`inline-flex size-7 items-center justify-center transition-colors ${
+                            messageFontSize <= MIN_MESSAGE_FONT_SIZE
+                              ? 'cursor-not-allowed text-zinc-400 dark:text-zinc-600'
+                              : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                          }`}
+                          aria-label={t('chat_toolbar_fontDecrease_a11y')}>
+                          <FiMinus className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustMessageFontSize(1)}
+                          disabled={messageFontSize >= MAX_MESSAGE_FONT_SIZE}
+                          className={`inline-flex size-7 items-center justify-center border-l border-zinc-200 transition-colors dark:border-zinc-700 ${
+                            messageFontSize >= MAX_MESSAGE_FONT_SIZE
+                              ? 'cursor-not-allowed text-zinc-400 dark:text-zinc-600'
+                              : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                          }`}
+                          aria-label={t('chat_toolbar_fontIncrease_a11y')}>
+                          <FiPlus className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <MessageList
+                    messages={messages}
+                    collapsePlannerMessages={collapsePlannerMessages}
+                    fontSize={messageFontSize}
+                  />
                   <div ref={messagesEndRef} />
                 </div>
               )}

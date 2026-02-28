@@ -76,6 +76,18 @@
   "chat_modeToggle_guide_desc": {
     "message": "由代理標示，你來點擊"
   },
+  "chat_toolbar_plan": {
+    "message": "規劃"
+  },
+  "chat_toolbar_planToggle_a11y": {
+    "message": "切換是否摺疊規劃器訊息"
+  },
+  "chat_toolbar_fontDecrease_a11y": {
+    "message": "縮小訊息字體大小"
+  },
+  "chat_toolbar_fontIncrease_a11y": {
+    "message": "放大訊息字體大小"
+  },
   "chat_input_placeholder": {
     "message": "有什麼需要協助的嗎？"
   },
@@ -273,6 +285,27 @@
   },
   "options_general_replayHistoricalTasks_desc": {
     "message": "啟用儲存與重播代理程式的步驟歷史紀錄 (此為實驗性功能，可能存在問題)"
+  },
+  "options_general_collapsePlannerMessages": {
+    "message": "摺疊規劃器訊息"
+  },
+  "options_general_collapsePlannerMessages_desc": {
+    "message": "在聊天中預設摺疊規劃器訊息群組"
+  },
+  "options_general_messageFontSize": {
+    "message": "訊息字體大小"
+  },
+  "options_general_messageFontSize_desc": {
+    "message": "調整側邊面板中的訊息文字大小"
+  },
+  "options_general_messageFontSize_small": {
+    "message": "小"
+  },
+  "options_general_messageFontSize_default": {
+    "message": "預設"
+  },
+  "options_general_messageFontSize_large": {
+    "message": "大"
   },
   "options_models_providers_header": {
     "message": "LLM 提供者"
