@@ -308,6 +308,11 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
     }
 
     const state = await this.prompt.getUserMessage(this.context);
+    const guideNotes = this.context.consumeGuideUserNotes();
+    for (const note of guideNotes) {
+      const msg = new HumanMessage(`User guidance note: ${note}`);
+      messageManager.addMessageWithTokens(msg);
+    }
     messageManager.addStateMessage(state);
     this.context.stateMessageAdded = true;
   }
@@ -375,12 +380,16 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
     await browserContext.removeHighlight();
 
     for (const [i, action] of actions.entries()) {
-      const actionName = Object.keys(action)[0];
+      let actionName = Object.keys(action)[0];
       const actionArgs = action[actionName];
       try {
         // check if the task is paused or stopped
         if (this.context.paused || this.context.stopped) {
           return results;
+        }
+
+        if (this.context.interactionMode === 'guided' && actionName === 'click_element') {
+          actionName = 'guide_user_click';
         }
 
         const actionInstance = this.actionRegistry.getAction(actionName);

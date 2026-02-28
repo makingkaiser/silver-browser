@@ -460,6 +460,12 @@
   "bg_cmd_followUpTask_cleaned": {
     "message": "執行器已被清理，無法新增後續任務。"
   },
+  "bg_cmd_guideUserNote_noNote": {
+    "message": "未提供導引備註"
+  },
+  "bg_cmd_guideUserNote_ok": {
+    "message": "已收到導引備註"
+  },
   "bg_cmd_resumeTask_noTask": {
     "message": "沒有可接續的任務。"
   },
@@ -652,6 +658,59 @@
   },
   "act_click_newTabOpened": {
     "message": "已開啟新分頁，正在切換至該分頁"
+  },
+  "act_guideUserClick_start": {
+    "message": "引導使用者點選索引 $INDEX$ 的元素",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "act_guideUserClick_instruction": {
+    "message": "請點選高亮目標 $INDEX$：$TEXT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      },
+      "text": {
+        "content": "$2",
+        "example": "封存按鈕"
+      }
+    }
+  },
+  "act_guideUserClick_ok": {
+    "message": "已確認點選目標 $INDEX$：$TEXT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      },
+      "text": {
+        "content": "$2",
+        "example": "封存按鈕"
+      }
+    }
+  },
+  "act_guideUserClick_timeout": {
+    "message": "等待目標點擊逾時"
+  },
+  "act_guideUserClick_wrongTarget": {
+    "message": "該次點擊不是高亮目標"
+  },
+  "act_guideUserClick_retry": {
+    "message": "請再試一次：$REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "該次點擊不是高亮目標"
+      }
+    }
+  },
+  "act_guideUserClick_target": {
+    "message": "目標項目"
   },
   "act_inputText_start": {
     "message": "正在於索引為 $INDEX$ 的欄位中輸入文字",

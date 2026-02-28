@@ -4,7 +4,7 @@ import { DEFAULT_INCLUDE_ATTRIBUTES } from '../browser/dom/views';
 import type { DOMHistoryElement } from '../browser/dom/history/view';
 import type MessageManager from './messages/service';
 import type { EventManager } from './event/manager';
-import { type Actors, type ExecutionState, AgentEvent } from './event/types';
+import { type Actors, type ExecutionState, type EventData, AgentEvent } from './event/types';
 import { AgentStepHistory } from './history';
 
 export interface AgentOptions {
@@ -33,6 +33,8 @@ export const DEFAULT_AGENT_OPTIONS: AgentOptions = {
   planningInterval: 3,
 };
 
+export type InteractionMode = 'default' | 'guided';
+
 export class AgentContext {
   controller: AbortController;
   taskId: string;
@@ -49,6 +51,8 @@ export class AgentContext {
   stateMessageAdded: boolean;
   history: AgentStepHistory;
   finalAnswer: string | null;
+  interactionMode: InteractionMode;
+  private guideUserNotes: string[];
 
   constructor(
     taskId: string,
@@ -73,16 +77,32 @@ export class AgentContext {
     this.stateMessageAdded = false;
     this.history = new AgentStepHistory();
     this.finalAnswer = null;
+    this.interactionMode = 'default';
+    this.guideUserNotes = [];
   }
 
-  async emitEvent(actor: Actors, state: ExecutionState, eventDetails: string) {
+  async emitEvent(actor: Actors, state: ExecutionState, eventDetails: string, eventMeta?: Partial<EventData>) {
     const event = new AgentEvent(actor, state, {
       taskId: this.taskId,
       step: this.nSteps,
       maxSteps: this.options.maxSteps,
       details: eventDetails,
+      ...eventMeta,
     });
     await this.eventManager.emit(event);
+  }
+
+  addGuideUserNote(note: string): void {
+    const cleanedNote = note.trim();
+    if (cleanedNote) {
+      this.guideUserNotes.push(cleanedNote);
+    }
+  }
+
+  consumeGuideUserNotes(): string[] {
+    const notes = [...this.guideUserNotes];
+    this.guideUserNotes = [];
+    return notes;
   }
 
   async pause() {

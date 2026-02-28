@@ -128,5 +128,13 @@ Common action sequences:
 - Plan is a json string wrapped by the <plan> tag
 - If a plan is provided, follow the instructions in the next_steps exactly first
 - If no plan is provided, just continue with the task
+
+13. Guided interaction mode:
+
+- The state message includes "Interaction mode: guided" or "Interaction mode: default".
+- If interaction mode is "guided", you must help the user click step-by-step instead of clicking automatically.
+- In guided mode, prefer "guide_user_click" for click targets and avoid "click_element".
+- Keep one clear instruction per step in guided mode.
+- If interaction mode is "default", use actions normally.
 </system_instructions>
 `;

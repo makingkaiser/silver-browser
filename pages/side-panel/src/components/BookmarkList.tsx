@@ -15,8 +15,20 @@ interface BookmarkListProps {
   onBookmarkUpdateTitle?: (id: number, title: string) => void;
   onBookmarkDelete?: (id: number) => void;
   onBookmarkReorder?: (draggedId: number, targetId: number) => void;
-  isDarkMode?: boolean;
 }
+
+const DragGrip = () => (
+  <div className="mr-2 flex shrink-0 cursor-grab items-center text-zinc-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-zinc-600">
+    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
+      <circle cx="2" cy="2" r="1.5" />
+      <circle cx="6" cy="2" r="1.5" />
+      <circle cx="2" cy="7" r="1.5" />
+      <circle cx="6" cy="7" r="1.5" />
+      <circle cx="2" cy="12" r="1.5" />
+      <circle cx="6" cy="12" r="1.5" />
+    </svg>
+  </div>
+);
 
 const BookmarkList: React.FC<BookmarkListProps> = ({
   bookmarks,
@@ -24,7 +36,6 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
   onBookmarkUpdateTitle,
   onBookmarkDelete,
   onBookmarkReorder,
-  isDarkMode = false,
 }) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
@@ -47,11 +58,9 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
     setEditingId(null);
   };
 
-  // Drag handlers
   const handleDragStart = (e: React.DragEvent, id: number) => {
     setDraggedId(id);
     e.dataTransfer.setData('text/plain', id.toString());
-    // Add more transparent effect
     e.currentTarget.classList.add('opacity-25');
   };
 
@@ -73,7 +82,6 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
     }
   };
 
-  // Focus the input field when entering edit mode
   useEffect(() => {
     if (editingId !== null && inputRef.current) {
       inputRef.current.focus();
@@ -82,7 +90,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
 
   return (
     <div className="p-2">
-      <h3 className={`mb-3 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
         {t('chat_bookmarks_header')}
       </h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -94,9 +102,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
             onDrop={e => handleDrop(e, bookmark.id)}
-            className={`group relative rounded-lg p-3 ${
-              isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-white hover:bg-sky-50'
-            } border ${isDarkMode ? 'border-slate-700' : 'border-sky-100'}`}>
+            className="group relative rounded-xl border border-zinc-200 p-3 transition-all hover:ring-1 hover:ring-emerald-500/30 dark:border-zinc-800">
             {editingId === bookmark.id ? (
               <div className="flex items-center">
                 <input
@@ -104,73 +110,55 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                   type="text"
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
-                  className={`mr-2 grow rounded px-2 py-1 text-sm ${
-                    isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-sky-100 bg-white text-gray-700'
-                  } border`}
+                  className="mr-2 grow rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                 />
                 <button
                   onClick={() => handleSaveEdit(bookmark.id)}
-                  className={`rounded p-1 ${
-                    isDarkMode
-                      ? 'bg-slate-700 text-green-400 hover:bg-slate-600'
-                      : 'bg-white text-green-500 hover:bg-gray-100'
-                  }`}
+                  className="rounded-lg p-1 text-emerald-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   aria-label={t('chat_bookmarks_saveEdit')}
                   type="button">
                   <FaCheck size={14} />
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className={`ml-1 rounded p-1 ${
-                    isDarkMode
-                      ? 'bg-slate-700 text-red-400 hover:bg-slate-600'
-                      : 'bg-white text-red-500 hover:bg-gray-100'
-                  }`}
+                  className="ml-1 rounded-lg p-1 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   aria-label={t('chat_bookmarks_cancelEdit')}
                   type="button">
                   <FaTimes size={14} />
                 </button>
               </div>
             ) : (
-              <>
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => onBookmarkSelect(bookmark.content)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        onBookmarkSelect(bookmark.content);
-                      }
-                    }}
-                    className="w-full text-left">
-                    <div
-                      className={`truncate pr-10 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                      {bookmark.title}
-                    </div>
-                  </button>
-                </div>
-              </>
+              <div className="flex items-center">
+                <DragGrip />
+                <button
+                  type="button"
+                  onClick={() => onBookmarkSelect(bookmark.content)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onBookmarkSelect(bookmark.content);
+                    }
+                  }}
+                  className="w-full text-left">
+                  <div className="truncate pr-10 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {bookmark.title}
+                  </div>
+                </button>
+              </div>
             )}
 
             {editingId !== bookmark.id && (
               <>
-                {/* Edit button - top right */}
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     handleEditClick(bookmark);
                   }}
-                  className={`absolute right-[28px] top-1/2 z-10 -translate-y-1/2 rounded p-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${
-                    isDarkMode
-                      ? 'bg-slate-700 text-sky-400 hover:bg-slate-600'
-                      : 'bg-white text-sky-500 hover:bg-gray-100'
-                  }`}
+                  className="absolute right-[28px] top-1/2 z-10 -translate-y-1/2 rounded-lg p-1 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-emerald-500 group-hover:opacity-100 dark:hover:bg-zinc-800"
                   aria-label={t('chat_bookmarks_edit')}
                   type="button">
                   <FaPen size={14} />
                 </button>
 
-                {/* Delete button - bottom right */}
                 <button
                   onClick={e => {
                     e.stopPropagation();
@@ -178,11 +166,7 @@ const BookmarkList: React.FC<BookmarkListProps> = ({
                       onBookmarkDelete(bookmark.id);
                     }
                   }}
-                  className={`absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded p-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${
-                    isDarkMode
-                      ? 'bg-slate-700 text-gray-400 hover:bg-slate-600'
-                      : 'bg-white text-gray-500 hover:bg-gray-100'
-                  }`}
+                  className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-lg p-1 text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-zinc-800"
                   aria-label={t('chat_bookmarks_delete')}
                   type="button">
                   <FaTrash size={14} />

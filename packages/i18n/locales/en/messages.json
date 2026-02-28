@@ -467,6 +467,12 @@
   "bg_cmd_followUpTask_cleaned": {
     "message": "Executor was cleaned up, can not add follow-up task"
   },
+  "bg_cmd_guideUserNote_noNote": {
+    "message": "No guide note provided"
+  },
+  "bg_cmd_guideUserNote_ok": {
+    "message": "Guide note received"
+  },
   "bg_cmd_resumeTask_noTask": {
     "message": "No task to resume"
   },
@@ -660,6 +666,59 @@
   },
   "act_click_newTabOpened": {
     "message": "New tab opened - switching to it"
+  },
+  "act_guideUserClick_start": {
+    "message": "Guide user to click element $INDEX$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "act_guideUserClick_instruction": {
+    "message": "Please click highlighted item $INDEX$: $TEXT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      },
+      "text": {
+        "content": "$2",
+        "example": "Archive button"
+      }
+    }
+  },
+  "act_guideUserClick_ok": {
+    "message": "Confirmed click on item $INDEX$: $TEXT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      },
+      "text": {
+        "content": "$2",
+        "example": "Archive button"
+      }
+    }
+  },
+  "act_guideUserClick_timeout": {
+    "message": "Timeout waiting for the target click"
+  },
+  "act_guideUserClick_wrongTarget": {
+    "message": "That click was not on the highlighted target"
+  },
+  "act_guideUserClick_retry": {
+    "message": "Try again: $REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "That click was not on the highlighted target"
+      }
+    }
+  },
+  "act_guideUserClick_target": {
+    "message": "target item"
   },
   "act_inputText_start": {
     "message": "Input text into index $INDEX$",

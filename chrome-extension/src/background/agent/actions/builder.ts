@@ -2,6 +2,7 @@ import { ActionResult, type AgentContext } from '@src/background/agent/types';
 import { t } from '@extension/i18n';
 import {
   clickElementActionSchema,
+  guideUserClickActionSchema,
   doneActionSchema,
   goBackActionSchema,
   goToUrlActionSchema,
@@ -275,6 +276,71 @@ export class ActionBuilder {
       true,
     );
     actions.push(clickElement);
+
+    const guideUserClick = new Action(
+      async (input: z.infer<typeof guideUserClickActionSchema.schema>) => {
+        const intent = input.intent || t('act_guideUserClick_start', [input.index.toString()]);
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, intent, { uiHint: 'guide_active' });
+
+        const page = await this.context.browserContext.getCurrentPage();
+        const focusedState = await page.focusHighlight(input.index, this.context.options.useVision);
+        const elementNode = focusedState.selectorMap.get(input.index);
+        if (!elementNode) {
+          const errorMsg = t('act_errors_elementNotExist', [input.index.toString()]);
+          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, errorMsg);
+          return new ActionResult({ error: errorMsg, includeInMemory: true });
+        }
+
+        const elementText = elementNode.getAllTextTillNextClickableElement(2).trim();
+        const instruction =
+          input.instruction?.trim() ||
+          t('act_guideUserClick_instruction', [input.index.toString(), elementText || t('act_guideUserClick_target')]);
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_START, instruction, { uiHint: 'guide_wait' });
+
+        const timeoutMs = Math.max(5, input.timeoutSeconds || 45) * 1000;
+        const deadline = Date.now() + timeoutMs;
+        let clickResult: { ok: boolean; reason?: 'timeout' | 'wrong-target' | 'not-found' } = {
+          ok: false,
+          reason: 'timeout',
+        };
+
+        while (Date.now() < deadline) {
+          clickResult = await page.waitForUserClickOnElement(elementNode, deadline - Date.now());
+          if (clickResult.ok) {
+            break;
+          }
+          if (clickResult.reason === 'wrong-target') {
+            this.context.emitEvent(
+              Actors.NAVIGATOR,
+              ExecutionState.ACT_START,
+              t('act_guideUserClick_retry', [t('act_guideUserClick_wrongTarget')]),
+              { uiHint: 'guide_wait' },
+            );
+            continue;
+          }
+          break;
+        }
+
+        if (!clickResult.ok) {
+          const failMsg =
+            clickResult.reason === 'not-found'
+              ? t('act_errors_elementNoLongerAvailable', [input.index.toString()])
+              : t('act_guideUserClick_retry', [t('act_guideUserClick_timeout')]);
+          this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_FAIL, failMsg, { uiHint: 'guide_wait' });
+          return new ActionResult({ error: failMsg, includeInMemory: true });
+        }
+
+        const msg = t('act_guideUserClick_ok', [input.index.toString(), elementText || t('act_guideUserClick_target')]);
+        this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg, { uiHint: 'guide_active' });
+        return new ActionResult({
+          extractedContent: msg,
+          includeInMemory: true,
+        });
+      },
+      guideUserClickActionSchema,
+      true,
+    );
+    actions.push(guideUserClick);
 
     const inputText = new Action(
       async (input: z.infer<typeof inputTextActionSchema.schema>) => {

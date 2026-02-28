@@ -42,6 +42,8 @@ export enum ExecutionState {
   ACT_FAIL = 'act.fail',
 }
 
+export type EventUIHint = 'guide_wait' | 'guide_active';
+
 export interface EventData {
   /** Data associated with an event */
   taskId: string;
@@ -51,6 +53,8 @@ export interface EventData {
   maxSteps: number;
   /** details is the content of the event */
   details: string;
+  /** Optional UI hint for guided interaction */
+  uiHint?: EventUIHint;
 }
 
 export class AgentEvent {

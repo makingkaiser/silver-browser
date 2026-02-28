@@ -25,6 +25,7 @@ import { chatHistoryStore } from '@extension/storage/lib/chat';
 import type { AgentStepHistory } from './history';
 import type { GeneralSettingsConfig } from '@extension/storage';
 import { analytics } from '../services/analytics';
+import { detectInteractionMode } from './interactionMode';
 
 const logger = createLogger('Executor');
 
@@ -65,6 +66,8 @@ export class Executor {
 
     this.generalSettings = extraArgs?.generalSettings;
     this.tasks.push(task);
+    context.interactionMode = detectInteractionMode(task);
+    logger.info(`Interaction mode: ${context.interactionMode}`);
     this.navigatorPrompt = new NavigatorPrompt(context.options.maxActionsPerStep);
     this.plannerPrompt = new PlannerPrompt();
 
@@ -101,9 +104,18 @@ export class Executor {
   addFollowUpTask(task: string): void {
     this.tasks.push(task);
     this.context.messageManager.addNewTask(task);
+    this.context.interactionMode = detectInteractionMode(task);
+    logger.info(`Interaction mode updated: ${this.context.interactionMode}`);
 
     // need to reset previous action results that are not included in memory
     this.context.actionResults = this.context.actionResults.filter(result => result.includeInMemory);
+  }
+
+  addGuideUserNote(note: string): void {
+    if (!note.trim()) {
+      return;
+    }
+    this.context.addGuideUserNote(note);
   }
 
   /**

@@ -53,6 +53,18 @@ export const clickElementActionSchema: ActionSchema = {
   }),
 };
 
+export const guideUserClickActionSchema: ActionSchema = {
+  name: 'guide_user_click',
+  description: 'Highlight a target element and wait for the user to click it',
+  schema: z.object({
+    intent: z.string().default('').describe('purpose of this action'),
+    index: z.number().int().describe('index of the element'),
+    instruction: z.string().default('').describe('short instruction for the user'),
+    timeoutSeconds: z.number().int().default(45).describe('how long to wait for the user click'),
+    xpath: z.string().nullable().optional().describe('xpath of the element'),
+  }),
+};
+
 export const inputTextActionSchema: ActionSchema = {
   name: 'input_text',
   description: 'Input text into an interactive input element',

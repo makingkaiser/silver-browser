@@ -129,6 +129,19 @@ chrome.runtime.onConnect.addListener(port => {
             break;
           }
 
+          case 'guide_user_note': {
+            if (!message.note) return port.postMessage({ type: 'error', error: t('bg_cmd_guideUserNote_noNote') });
+            if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+            if (message.taskId) {
+              const runningTaskId = await currentExecutor.getCurrentTaskId();
+              if (runningTaskId !== message.taskId) {
+                return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
+              }
+            }
+            currentExecutor.addGuideUserNote(message.note);
+            return port.postMessage({ type: 'success', msg: t('bg_cmd_guideUserNote_ok') });
+          }
+
           case 'cancel_task': {
             if (!currentExecutor) return port.postMessage({ type: 'error', error: t('bg_errors_noRunningTask') });
             await currentExecutor.cancel();

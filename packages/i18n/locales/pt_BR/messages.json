@@ -466,6 +466,12 @@
   "bg_cmd_followUpTask_cleaned": {
     "message": "O executor foi limpo, não é possível adicionar tarefa de acompanhamento"
   },
+  "bg_cmd_guideUserNote_noNote": {
+    "message": "Nenhuma nota de guia foi fornecida"
+  },
+  "bg_cmd_guideUserNote_ok": {
+    "message": "Nota de guia recebida"
+  },
   "bg_cmd_resumeTask_noTask": {
     "message": "Nenhuma tarefa para resumir"
   },
@@ -659,6 +665,59 @@
   },
   "act_click_newTabOpened": {
     "message": "Nova aba aberta - mudando para ela"
+  },
+  "act_guideUserClick_start": {
+    "message": "Guiar usuário para clicar no elemento $INDEX$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "act_guideUserClick_instruction": {
+    "message": "Por favor, clique no item destacado $INDEX$: $TEXT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      },
+      "text": {
+        "content": "$2",
+        "example": "Botão Arquivar"
+      }
+    }
+  },
+  "act_guideUserClick_ok": {
+    "message": "Clique confirmado no item $INDEX$: $TEXT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "5"
+      },
+      "text": {
+        "content": "$2",
+        "example": "Botão Arquivar"
+      }
+    }
+  },
+  "act_guideUserClick_timeout": {
+    "message": "Tempo esgotado aguardando o clique no alvo"
+  },
+  "act_guideUserClick_wrongTarget": {
+    "message": "Esse clique não foi no alvo destacado"
+  },
+  "act_guideUserClick_retry": {
+    "message": "Tente novamente: $REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "Esse clique não foi no alvo destacado"
+      }
+    }
+  },
+  "act_guideUserClick_target": {
+    "message": "item alvo"
   },
   "act_inputText_start": {
     "message": "Inserir texto no índice $INDEX$",

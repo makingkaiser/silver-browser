@@ -44,9 +44,10 @@ abstract class BasePrompt {
     if (context.stepInfo) {
       stepInfoDescription = `Current step: ${context.stepInfo.stepNumber + 1}/${context.stepInfo.maxSteps}`;
     }
+    stepInfoDescription += `\nInteraction mode: ${context.interactionMode}`;
 
     const timeStr = new Date().toISOString().slice(0, 16).replace('T', ' '); // Format: YYYY-MM-DD HH:mm
-    stepInfoDescription += `Current date and time: ${timeStr}`;
+    stepInfoDescription += `\nCurrent date and time: ${timeStr}`;
 
     let actionResultsDescription = '';
     if (context.actionResults.length > 0) {

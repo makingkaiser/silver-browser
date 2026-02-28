@@ -154,51 +154,53 @@ window.buildDomTree = (
         document.body.appendChild(container);
       }
 
+      if (focusHighlightIndex >= 0) {
+        let styleEl = document.getElementById('nano-highlight-style');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'nano-highlight-style';
+          styleEl.textContent = `
+            @keyframes nano-pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.6; }
+            }
+          `;
+          document.head.appendChild(styleEl);
+        }
+      }
+
       // Get element client rects
       const rects = element.getClientRects(); // Use getClientRects()
 
       if (!rects || rects.length === 0) return index; // Exit if no rects
 
-      // Generate a color based on the index
-      const colors = [
-        '#FF0000',
-        '#00FF00',
-        '#0000FF',
-        '#FFA500',
-        '#800080',
-        '#008080',
-        '#FF69B4',
-        '#4B0082',
-        '#FF4500',
-        '#2E8B57',
-        '#DC143C',
-        '#4682B4',
-      ];
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
       const colorIndex = index % colors.length;
       const baseColor = colors[colorIndex];
-      const backgroundColor = baseColor + '1A'; // 10% opacity version of the color
+      const backgroundColor = baseColor + '0F'; // 6% opacity
 
       // Get iframe offset if necessary
       let iframeOffset = { x: 0, y: 0 };
       if (parentIframe) {
-        const iframeRect = parentIframe.getBoundingClientRect(); // Keep getBoundingClientRect for iframe offset
+        const iframeRect = parentIframe.getBoundingClientRect();
         iframeOffset.x = iframeRect.left;
         iframeOffset.y = iframeRect.top;
       }
 
-      // Create fragment to hold overlay elements
       const fragment = document.createDocumentFragment();
 
-      // Create highlight overlays for each client rect
       for (const rect of rects) {
-        if (rect.width === 0 || rect.height === 0) continue; // Skip empty rects
+        if (rect.width === 0 || rect.height === 0) continue;
 
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
-        overlay.style.border = `2px solid ${baseColor}`;
+        overlay.style.border = `1.5px solid ${baseColor}99`;
         overlay.style.backgroundColor = backgroundColor;
+        overlay.style.borderRadius = '4px';
         overlay.style.pointerEvents = 'none';
         overlay.style.boxSizing = 'border-box';
+        overlay.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,0.08)';
+        overlay.style.transition = 'opacity 0.2s ease';
 
         const top = rect.top + iframeOffset.y;
         const left = rect.left + iframeOffset.x;
@@ -208,8 +210,18 @@ window.buildDomTree = (
         overlay.style.width = `${rect.width}px`;
         overlay.style.height = `${rect.height}px`;
 
+        if (focusHighlightIndex >= 0) {
+          if (index === focusHighlightIndex) {
+            overlay.style.animation = 'nano-pulse 1.5s ease-in-out infinite';
+            overlay.style.border = `2px solid ${baseColor}`;
+            overlay.style.backgroundColor = baseColor + '1A';
+          } else {
+            overlay.style.opacity = '0.3';
+          }
+        }
+
         fragment.appendChild(overlay);
-        overlays.push({ element: overlay, initialRect: rect }); // Store overlay and its rect
+        overlays.push({ element: overlay, initialRect: rect });
       }
 
       // Create and position a single label relative to the first rect
@@ -217,11 +229,16 @@ window.buildDomTree = (
       label = document.createElement('div');
       label.className = 'playwright-highlight-label';
       label.style.position = 'fixed';
-      label.style.background = baseColor;
+      label.style.background = baseColor + 'E6';
       label.style.color = 'white';
-      label.style.padding = '1px 4px';
-      label.style.borderRadius = '4px';
-      label.style.fontSize = `${Math.min(12, Math.max(8, firstRect.height / 2))}px`;
+      label.style.padding = '2px 6px';
+      label.style.borderRadius = '6px';
+      label.style.fontSize = '11px';
+      label.style.fontWeight = '600';
+      label.style.fontFamily = "'Geist Mono', ui-monospace, SFMono-Regular, monospace";
+      label.style.lineHeight = '1.2';
+      label.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+      label.style.letterSpacing = '0.02em';
       label.textContent = index.toString();
 
       labelWidth = label.offsetWidth > 0 ? label.offsetWidth : labelWidth; // Update actual width if possible
@@ -230,15 +247,14 @@ window.buildDomTree = (
       const firstRectTop = firstRect.top + iframeOffset.y;
       const firstRectLeft = firstRect.left + iframeOffset.x;
 
-      let labelTop = firstRectTop + 2;
-      let labelLeft = firstRectLeft + firstRect.width - labelWidth - 2;
+      let labelTop = firstRectTop - labelHeight - 4;
+      let labelLeft = firstRectLeft + firstRect.width - labelWidth;
 
-      // Adjust label position if first rect is too small
-      if (firstRect.width < labelWidth + 4 || firstRect.height < labelHeight + 4) {
-        labelTop = firstRectTop - labelHeight - 2;
-        labelLeft = firstRectLeft + firstRect.width - labelWidth; // Align with right edge
-        if (labelLeft < iframeOffset.x) labelLeft = firstRectLeft; // Prevent going off-left
+      if (labelTop < 0) {
+        labelTop = firstRectTop + 2;
+        labelLeft = firstRectLeft + firstRect.width - labelWidth - 2;
       }
+      if (labelLeft < iframeOffset.x) labelLeft = firstRectLeft;
 
       // Ensure label stays within viewport bounds slightly better
       labelTop = Math.max(0, Math.min(labelTop, window.innerHeight - labelHeight));
@@ -246,6 +262,10 @@ window.buildDomTree = (
 
       label.style.top = `${labelTop}px`;
       label.style.left = `${labelLeft}px`;
+
+      if (focusHighlightIndex >= 0 && index !== focusHighlightIndex) {
+        label.style.opacity = '0.3';
+      }
 
       fragment.appendChild(label);
 
@@ -292,14 +312,14 @@ window.buildDomTree = (
           const firstNewRectTop = firstNewRect.top + newIframeOffset.y;
           const firstNewRectLeft = firstNewRect.left + newIframeOffset.x;
 
-          let newLabelTop = firstNewRectTop + 2;
-          let newLabelLeft = firstNewRectLeft + firstNewRect.width - labelWidth - 2;
+          let newLabelTop = firstNewRectTop - labelHeight - 4;
+          let newLabelLeft = firstNewRectLeft + firstNewRect.width - labelWidth;
 
-          if (firstNewRect.width < labelWidth + 4 || firstNewRect.height < labelHeight + 4) {
-            newLabelTop = firstNewRectTop - labelHeight - 2;
-            newLabelLeft = firstNewRectLeft + firstNewRect.width - labelWidth;
-            if (newLabelLeft < newIframeOffset.x) newLabelLeft = firstNewRectLeft;
+          if (newLabelTop < 0) {
+            newLabelTop = firstNewRectTop + 2;
+            newLabelLeft = firstNewRectLeft + firstNewRect.width - labelWidth - 2;
           }
+          if (newLabelLeft < newIframeOffset.x) newLabelLeft = firstNewRectLeft;
 
           // Ensure label stays within viewport bounds
           newLabelTop = Math.max(0, Math.min(newLabelTop, window.innerHeight - labelHeight));

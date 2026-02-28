@@ -45,6 +45,11 @@ export function build_initial_state(tabId?: number, url?: string, title?: string
   };
 }
 
+export interface UserClickWaitResult {
+  ok: boolean;
+  reason?: 'timeout' | 'wrong-target' | 'not-found';
+}
+
 /**
  * Cached clickable elements hashes for the last state
  */
@@ -373,6 +378,14 @@ export default class Page {
     this._cachedState = updatedState;
 
     return updatedState;
+  }
+
+  async focusHighlight(index: number, useVision = false): Promise<PageState> {
+    if (!this._validWebPage) {
+      return build_initial_state(this._tabId);
+    }
+    await this.waitForPageAndFramesLoad();
+    return await this._updateState(useVision, index);
   }
 
   async _updateState(useVision = false, focusElement = -1): Promise<PageState> {
@@ -1096,6 +1109,68 @@ export default class Page {
     }
 
     return null;
+  }
+
+  async waitForUserClickOnElement(elementNode: DOMElementNode, timeoutMs = 45000): Promise<UserClickWaitResult> {
+    const element = await this.locateElement(elementNode);
+    if (!element) {
+      return { ok: false, reason: 'not-found' };
+    }
+
+    let clickResult: { ok: boolean; reason?: 'timeout' | 'wrong-target' };
+    try {
+      clickResult = await element.evaluate(
+        (target, timeout) =>
+          new Promise<{ ok: boolean; reason?: 'timeout' | 'wrong-target' }>(resolve => {
+            let settled = false;
+            const start = Date.now();
+
+            const cleanup = () => {
+              document.removeEventListener('click', onClick, true);
+              window.removeEventListener('beforeunload', onBeforeUnload, true);
+            };
+
+            const settle = (result: { ok: boolean; reason?: 'timeout' | 'wrong-target' }) => {
+              if (settled) return;
+              settled = true;
+              cleanup();
+              resolve(result);
+            };
+
+            const onBeforeUnload = () => settle({ ok: true });
+
+            const onClick = (event: MouseEvent) => {
+              const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+              if (path.includes(target)) {
+                settle({ ok: true });
+                return;
+              }
+
+              if (Date.now() - start >= timeout) {
+                settle({ ok: false, reason: 'timeout' });
+                return;
+              }
+
+              settle({ ok: false, reason: 'wrong-target' });
+            };
+
+            document.addEventListener('click', onClick, true);
+            window.addEventListener('beforeunload', onBeforeUnload, true);
+            window.setTimeout(() => settle({ ok: false, reason: 'timeout' }), timeout);
+          }),
+        timeoutMs,
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      // A click that triggered navigation can destroy the execution context before listener settles.
+      if (errorMessage.includes('Execution context was destroyed') || errorMessage.includes('Cannot find context')) {
+        return { ok: true };
+      }
+      logger.warning(`waitForUserClickOnElement failed: ${errorMessage}`);
+      return { ok: false, reason: 'wrong-target' };
+    }
+
+    return clickResult.ok ? { ok: true } : { ok: false, reason: clickResult.reason || 'wrong-target' };
   }
 
   async inputTextElementNode(useVision: boolean, elementNode: DOMElementNode, text: string): Promise<void> {
